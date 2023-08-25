@@ -1,9 +1,22 @@
+import os
+import subprocess
+from django.shortcuts import get_object_or_404
+from django.http import HttpResponse
 from django.shortcuts import render
 from rest_framework import generics
-from .models import Camera, ClusterUnit, Processing, ObjectsDetectionLogs
-from .serializers import CameraSerializer, ClusterUnitSerializer, ProcessingSerializer, ObjectsDetectionLogsSerializer
-from django.http import HttpResponse
 from datetime import datetime
+from .models import (
+            Camera, 
+            ClusterUnit, 
+            Processing, 
+            ObjectsDetectionLogs,
+        )
+from .serializers import (
+        CameraSerializer, 
+        ClusterUnitSerializer, 
+        ProcessingSerializer, 
+        ObjectsDetectionLogsSerializer,
+    )
 
 
 class CameraList(generics.ListCreateAPIView):
@@ -45,7 +58,31 @@ class ObjectsDetectionLogsList(generics.ListCreateAPIView):
             queryset = queryset.filter(type__type=detection_type)
 
         return queryset
+    
+def video_hls_view(request, filename):
+    # video = get_object_or_404(Video, id=video_id)
 
-def test(requset):
-    st = "<h4>"  + "</h4>"
-    return HttpResponse(ObjectsDetectionLogs.objects.first().__str__)
+    # video_path = video.video_file.path
+    video_path = '/home/ubuntuser/back_DSE/vid/L.mp4'
+
+    hls_output_dir = os.path.join(os.path.dirname(video_path), 'test')
+
+    #os.makedirs(hls_output_dir, exist_ok=True)
+
+    # subprocess.run([
+    #     'ffmpeg',
+    #     '-i', video_path,
+    #     '-c:v', 'libx264',
+    #     '-c:a', 'aac',
+    #     '-hls_time', '20',
+    #     '-hls_list_size', '10',
+    #     '-hls_flags', 'delete_segments',
+    #     '-hls_segment_filename', os.path.join(hls_output_dir, 'segment%d.ts'),
+    #     os.path.join(hls_output_dir, 'playlist.m3u8'),
+    # ])
+
+    playlist_path = os.path.join(hls_output_dir, filename)
+
+    with open(playlist_path, 'rb') as playlist_file:
+        response = HttpResponse(playlist_file.read(), content_type='application/vnd.apple.mpegurl')
+        return response
