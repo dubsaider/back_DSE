@@ -1,0 +1,9 @@
+.docker-compose.yml
+Dockerfile
+*.md
+*.pyc
+*__pycache__
+.cache
+.gitignore
+*env.files
+*nginx
