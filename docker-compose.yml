@@ -17,8 +17,8 @@ services:
     restart: always
     # volumes:
     #   - static_volume:/app/static
-    # env_file:
-    #   - .env.files/env.prod
+    env_file:
+      - env.files/env.prod
     
 
   db:
@@ -26,16 +26,14 @@ services:
     container_name: postgres_db
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    restart: on-failture
-    # env_file:
-    #   - .env.files/env.prod
+    env_file:
+      - env.files/env.prod
 
   nginx:
     build:
       dockerfile: ./Dockerfile
       context: ./nginx/
     container_name: nginx
-    restart: on-failture
     depends_on:
       - django
     ports:
