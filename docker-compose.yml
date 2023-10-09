@@ -6,7 +6,7 @@ services:
     container_name: backend_app
     command: sh -c "python manage.py makemigrations &&
                     python manage.py migrate &&
-                    gunicorn back.wsgi.application --bind 0.0.0.0:8000" # need to set env var BACKEND_POST
+                    gunicorn back.wsgi:application --bind 0.0.0.0:8000"
     ports:
       - 8000:8000
       - 9092:9092
@@ -20,7 +20,6 @@ services:
     env_file:
       - env.files/env.prod
     
-
   db:
     image: postgres:alpine
     container_name: postgres_db
