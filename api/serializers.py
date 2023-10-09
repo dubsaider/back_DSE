@@ -1,5 +1,11 @@
 from rest_framework import serializers
-from .models import Camera, ClusterUnit, Processing, DetectedObjectTypes, ObjectsDetectionLogs
+from .models import (
+    Camera, 
+    ClusterUnit, 
+    Processing, 
+    DetectedObjectType, 
+    ObjectsDetectionLog,
+    )
 
 
 class CameraSerializer(serializers.ModelSerializer):
@@ -17,10 +23,10 @@ class ProcessingSerializer(serializers.ModelSerializer):
         model = Processing
         fields = '__all__'
 
-class ObjectsDetectionLogsSerializer(serializers.ModelSerializer):
+class ObjectsDetectionLogSerializer(serializers.ModelSerializer):
     location = serializers.CharField(source='location.location')
     type = serializers.CharField(source='type.type')
     class Meta:
-        model = ObjectsDetectionLogs
+        model = ObjectsDetectionLog
         fields = '__all__'
 
