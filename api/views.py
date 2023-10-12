@@ -7,6 +7,11 @@ import ffmpeg_streaming
 from django.shortcuts import get_object_or_404
 from django.http import HttpResponse, HttpResponseNotFound
 from django.shortcuts import render
+from rest_framework.decorators import api_view
+from rest_framework.parsers import JSONParser
+from django.http.response import JsonResponse
+from rest_framework.response import Response
+from rest_framework import status
 from rest_framework import generics
 from datetime import datetime, timedelta
 from .models import (
@@ -25,12 +30,57 @@ from .serializers import (
     )
 
 
-class CameraList(generics.ListCreateAPIView):
+class CameraList(generics.RetrieveUpdateDestroyAPIView): # 
     # quaryset = Camera.objects.all()
     serializer_class = CameraSerializer
 
     def get_queryset(self):
         return Camera.objects.all()
+
+
+@api_view(['POST', 'GET', 'PUT', 'DELETE'])
+def camera_methods(request, id=None):
+    if request.method=='GET':
+        if id:
+            camera = Camera.objects.get(id=id)
+            camera_serializer = CameraSerializer(camera)
+            # return JsonResponse(camera_serializer.data, safe=False)
+            return Response({"status":"success", "data": camera_serializer.data}, status= status.HTTP_200_OK)
+        else:
+            cameras = Camera.objects.all()
+            cameras_serializer = CameraSerializer(cameras, many=True)
+            # return JsonResponse(cameras_serializer.data, safe=False)
+            return Response({"status":"success", "data": cameras_serializer.data}, status= status.HTTP_200_OK)
+
+    elif request.method=='POST':
+        camera_data = JSONParser().parse(request)
+        camera_serializer = CameraSerializer(data = camera_data)
+        if camera_serializer.is_valid():
+            camera_serializer.save()
+            return Response({"status":"success", "data": camera_serializer.data}, status= status.HTTP_201_CREATED)
+            #return JsonResponse("Added Successfully")
+        #return JsonResponse("Failed to Add")
+        return Response({"status":"failed", "data": camera_serializer.data}, status= status.HTTP_400_BAD_REQUEST)
+
+    elif request.method=='DELETE':
+        camera = Camera.objects.get(id=id)
+        camera.delete()
+        camera_serializer = CameraSerializer(camera)
+        # return JsonResponse("Deleted Successfully")
+        return Response({"status":"success", "data": camera_serializer.data}, status= status.HTTP_410_GONE)
+    
+    elif request.method=='PUT':
+        camera_data = JSONParser().parse(request)
+        camera = Camera.objects.get(id=id) #id=camera_data['id']
+        camera_serializer = CameraSerializer(camera, data=camera_data)
+
+        if camera_serializer.is_valid():
+            camera_serializer.save()
+            #return JsonResponse("Updated Successfully")
+            return Response({"status":"success", "data": camera_serializer.data}, status= status.HTTP_200_OK)
+        #return JsonResponse("Failed to Update")
+        return Response({"status":"success", "data": camera_serializer.data}, status= status.HTTP_400_BAD_REQUEST)
+
 
 class ClusterUnitList(generics.ListCreateAPIView):
     queryset = ClusterUnit.objects.all()
