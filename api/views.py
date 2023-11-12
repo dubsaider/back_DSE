@@ -70,6 +70,48 @@ class ObjectsDetectionLogsList(generics.ListCreateAPIView):
             queryset = queryset.filter(type__type=detection_type)
 
         return queryset.order_by('datestamp')
+
+def edit_camera(self):
+    id = self.request.query_params.get('id', None)
+    ip = self.request.query_params.get('ip', None)
+    name = self.request.query_params.get('name', None)
+    in_loc = self.request.query_params.get('input_location', None)
+    out_loc = self.request.query_params.get('output_location', None)
+    description = self.request.query_params.get('description', None)
+
+    if id is not None:
+        if ip is None or\
+           in_loc is None or\
+           name is None:
+            return HttpResponseNotFound()
+        
+        Camera.objects.create(camera_ip=ip,
+                              camera_name=name,
+                              input_location=Location.objects.filter(pk=in_loc).first(),
+                              output_location=Location.objects.filter(pk=out_loc).first() if out_loc is not None else None,
+                              camera_description=description if description is not None else "",
+                              )
+    else:
+        camera = Camera.objects.filter(pk=id).first()
+        if not camera:
+            return HttpResponseNotFound() 
+        if ip is not None:
+            camera.camera_ip=ip
+        if name is not None:
+            camera.camera_name=name
+        if in_loc is not None:
+            Location.objects.filter(pk=in_loc).first()
+        if out_loc is not None:
+            Location.objects.filter(pk=out_loc).first()
+        if description is not None:
+            camera.camera_description=description
+        camera.save()
+
+def del_camera(self):
+    id = self.request.query_params.get('id', None)
+    if id is None:
+        return HttpResponseNotFound()
+    camera = Camera.objects.filter(pk=id).delete()
     
 def video_hls_view(request, filename):
     # video = get_object_or_404(Video, id=video_id)
