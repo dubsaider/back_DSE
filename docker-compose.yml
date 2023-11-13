@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  django:
+    build: .
+    container_name: backend_app
+    command: sh -c "python manage.py makemigrations &&
+                    python manage.py migrate &&
+                    gunicorn back.wsgi:application --bind 0.0.0.0:8000"
+    ports:
+      - 8000:8000
+      - 9092:9092
+      - 9093:9093
+      - 9094:9094
+    depends_on:
+      - db
+    restart: always
+    # volumes:
+    #   - static_volume:/app/static
+    env_file:
+      - env.files/.env.prod
+    
+  db:
+    image: postgres:alpine
+    container_name: postgres_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    env_file:
+      - env.files/.env.prod
+
+  nginx:
+    build:
+      dockerfile: ./Dockerfile
+      context: ./nginx/
+    container_name: nginx
+    depends_on:
+      - django
+    ports:
+      - 80:80
+      # - ${NGINX_EXTERNAL_PORT}:80
+    # volumes:
+    #   - static_volume:/app/static
+
+
+volumes:
+  postgres_data:
+  # static_volume:
