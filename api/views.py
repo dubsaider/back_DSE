@@ -73,8 +73,8 @@ class ObjectsDetectionLogsList(generics.ListCreateAPIView):
 
 def edit_camera(self):
     id = self.request.query_params.get('id', None)
-    ip = self.request.query_params.get('ip', None)
-    name = self.request.query_params.get('name', None)
+    ip = self.request.query_params.get('camera_ip', None)
+    name = self.request.query_params.get('camera_name', None)
     in_loc = self.request.query_params.get('input_location', None)
     out_loc = self.request.query_params.get('output_location', None)
     description = self.request.query_params.get('description', None)
