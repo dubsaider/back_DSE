@@ -3,7 +3,7 @@ import random
 from pathlib import Path
 import subprocess
 import math
-import ffmpeg_streaming
+# import ffmpeg_streaming
 from django.shortcuts import get_object_or_404
 from django.http import HttpResponse, HttpResponseNotFound
 from django.shortcuts import render
@@ -77,7 +77,7 @@ def edit_camera(self):
     name = self.request.query_params.get('camera_name', None)
     in_loc = self.request.query_params.get('input_location', None)
     out_loc = self.request.query_params.get('output_location', None)
-    description = self.request.query_params.get('description', None)
+    description = self.request.query_params.get('camera_description', None)
 
     if id is not None:
         if ip is None or\
