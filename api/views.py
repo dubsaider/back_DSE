@@ -70,6 +70,14 @@ class ObjectsDetectionLogsList(generics.ListCreateAPIView):
             queryset = queryset.filter(type__type=detection_type)
 
         return queryset.order_by('datestamp')
+    
+################################################
+#                   FIXIT                      #
+################################################
+
+###################
+#    Cameras      #
+###################
 
 def edit_camera(self):
     id = self.request.query_params.get('id', None)
@@ -99,10 +107,12 @@ def edit_camera(self):
             camera.camera_ip=ip
         if name is not None:
             camera.camera_name=name
-        if in_loc is not None:
-            Location.objects.filter(pk=in_loc).first()
+        loc = Location.objects.filter(pk=in_loc).first()
+        if in_loc is not None and loc:
+            camera.input_location = loc
+        loc = Location.objects.filter(pk=out_loc).first()
         if out_loc is not None:
-            Location.objects.filter(pk=out_loc).first()
+            camera.output_location = loc
         if description is not None:
             camera.camera_description=description
         camera.save()
@@ -112,7 +122,109 @@ def del_camera(self):
     if id is None:
         return HttpResponseNotFound()
     camera = Camera.objects.filter(pk=id).delete()
+
+###################
+#    Location     #
+###################
+
+def edit_location(self):
+    id = self.request.query_params.get('id', None)
+    location = self.request.query_params.get('location', None)
+    if location is None:
+        return HttpResponseNotFound()
+    if id is None:
+        Location.objects.create(location=location)
+    else:
+        loc = Location.objects.filter(pk=id).first()
+        if loc is None:
+           return HttpResponseNotFound()
+        loc.location = location
+
+def del_location(self):
+    id = self.request.query_params.get('id', None)
+    if id is None:
+        return HttpResponseNotFound()
+    camera = Location.objects.filter(pk=id).delete()
+
+###################
+#    Processing   #
+###################
+
+def edit_processing(self):
+    id = self.request.query_params.get('id', None)
+    camera = self.request.query_params.get('camera', None)
+    unit = self.request.query_params.get('unit', None)
+    processing_config = self.request.query_params.get('processing_config', None)
+
+    if id is None:
+        if camera is None or\
+            unit is None or\
+            processing_config is None:
+            return HttpResponseNotFound()
+        Processing.objects.create(camera=camera,
+                                unit=unit,
+                                processing_config=processing_config,
+                                )
+    else:
+        process = Processing.objects.filter(pk=id).first()
+        if not process:
+            return HttpResponseNotFound()
+        camera = Camera.objects.filter(pk=camera).first()
+        if camera is not None and camera:
+            process.camera = camera
+        unit = ClusterUnit.objects.filter(pk=camera).first()
+        if unit is not None and unit:
+            process.unit = unit
+        if processing_config is not None:
+            process.processing_config = processing_config
     
+def del_processing(self):
+    id = self.request.query_params.get('id', None)
+    if id is None:
+        return HttpResponseNotFound()
+    camera = Processing.objects.filter(pk=id).delete()
+
+####################
+#    ClusterUnit   #
+####################
+
+def edit_cluster_unit(self):
+    id = self.request.query_params.get('id', None)
+    unit_name = self.request.query_params.get('unit_name', None)
+    unit_ip = self.request.query_params.get('unit_ip', None)
+    unit_config = self.request.query_params.get('unit_config', None)
+
+    if id is None:
+        if unit_name is None or\
+            unit_ip is None or\
+            unit_config is None:
+            return HttpResponseNotFound()
+        ClusterUnit.objects.create(unit_name=unit_name,
+                                   unit_ip=unit_ip,
+                                   unit_config=unit_config,
+                                   )
+    else:
+        unit = ClusterUnit.objects.filter(pk=id).first()
+        if not unit:
+            return HttpResponseNotFound()
+
+        if unit_name is not None:
+            unit.unit_name = unit_name
+        if unit_ip is not None:
+            unit.unit_ip = unit_ip
+        if unit_config is not None:
+            unit.unit_config = unit_config
+
+def del_cluster_unit(self):
+    id = self.request.query_params.get('id', None)
+    if id is None:
+        return HttpResponseNotFound()
+    camera = ClusterUnit.objects.filter(pk=id).delete()   
+
+################################################
+#                 FIXITEND                     #
+################################################
+
 def video_hls_view(request, filename):
     # video = get_object_or_404(Video, id=video_id)
 
