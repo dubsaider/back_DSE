@@ -4,6 +4,7 @@ from .views import (
     ClusterUnitList, 
     ProcessingList, 
     ObjectsDetectionLogsList,
+    LocationList,
 
     create_camera,
     edit_camera,
@@ -42,7 +43,7 @@ urlpatterns = [
     path('processing/<int:id>', edit_processing, name='processing-edit'),
     path('processing/<int:id>', delete_processing, name='processing-delete'),
 
-
+    path('location/', LocationList.as_view(), name='location-list'),
     path('location/', create_location, name='location-create'),
     path('location/<int:id>', edit_location, name='location-edit'),
     path('location/<int:id>', delete_location, name='location-delete'),

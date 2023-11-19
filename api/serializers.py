@@ -5,6 +5,7 @@ from .models import (
     Processing, 
     DetectedObjectType, 
     ObjectsDetectionLog,
+    Location,
     )
 
 
@@ -30,3 +31,7 @@ class ObjectsDetectionLogSerializer(serializers.ModelSerializer):
         model = ObjectsDetectionLog
         fields = '__all__'
 
+class LocationSerializer(serializers.ModelSerializer):
+     class Meta:
+        model = Location
+        fields = '__all__'

@@ -22,6 +22,7 @@ from .serializers import (
         ClusterUnitSerializer, 
         ProcessingSerializer, 
         ObjectsDetectionLogSerializer,
+        LocationSerializer,
     )
 
 
@@ -39,6 +40,10 @@ class ClusterUnitList(generics.ListCreateAPIView):
 class ProcessingList(generics.ListCreateAPIView):
     queryset = Processing.objects.all()
     serializer_class = ProcessingSerializer
+
+class LocationList(generics.ListCreateAPIView):
+    queryset = Location.objects.all()
+    serializer_class = LocationSerializer
 
 class ObjectsDetectionLogsList(generics.ListCreateAPIView):
     serializer_class = ObjectsDetectionLogSerializer
