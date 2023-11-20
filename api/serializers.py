@@ -6,6 +6,12 @@ from .models import (
     DetectedObjectType, 
     ObjectsDetectionLog,
     Location,
+    EventType,
+    Action, 
+    Models, 
+    ComputerVisionModules, 
+    Event, 
+    DetectedObjectType
     )
 
 
@@ -34,4 +40,34 @@ class ObjectsDetectionLogSerializer(serializers.ModelSerializer):
 class LocationSerializer(serializers.ModelSerializer):
      class Meta:
         model = Location
+        fields = '__all__'
+
+class EventTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EventType
+        fields = '__all__'
+
+class ActionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Action
+        fields = '__all__'
+
+class ModelsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Models
+        fields = '__all__'
+
+class ComputerVisionModulesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ComputerVisionModules
+        fields = '__all__'
+
+class EventSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Event
+        fields = '__all__'
+
+class DetectedObjectTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DetectedObjectType
         fields = '__all__'

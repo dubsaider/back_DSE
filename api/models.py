@@ -20,7 +20,7 @@ class Camera(models.Model):
 class ClusterUnit(models.Model):
 	unit_name = models.CharField(max_length=255)
 	unit_ip = models.CharField(max_length=15)
-	unit_config = models.JSONField()
+	unit_config = models.JSONField(null=True, default=None)
 
 	def __str__(self):
 		return self.unit_name
@@ -28,21 +28,43 @@ class ClusterUnit(models.Model):
 class Processing(models.Model):
 	camera = models.ForeignKey(Camera, on_delete=models.CASCADE)
 	unit = models.ForeignKey(ClusterUnit, on_delete=models.CASCADE)
-	processing_config = models.JSONField()
+	processing_config = models.JSONField(default=None)
+	result_url = models.URLField(null=True, default=None)
 
 class EventType(models.Model):
-	event_type = models.CharField(max_length=255)
+	event_name = models.CharField(max_length=255)
+	event_description = models.CharField(max_length=255, null=True)
+	parameters = models.JSONField(null=True, default=None)
 
 	def __str__(self):
-		return self.event_type
+		return self.event_name
+	
+class Action(models.Model):
+	action_name = models.CharField(max_length=255)
+	action_description = models.CharField(max_length=255, null=True)
+	parameters = models.JSONField(null=True, default=None)
+
+	def __str__(self):
+		return self.action_name
+
+class Models(models.Model):
+	model_name = models.CharField(max_length=255)
+	model_description = models.CharField(max_length=255, null=True)
+
+class ComputerVisionModules(models.Model):
+	cv_modules_name = models.CharField(max_length=255)
+	cv_modules_description = models.CharField(max_length=255, null=True)
+	model_type = models.ForeignKey(Models, on_delete=models.CASCADE, null=True, default=None)
 
 class Event(models.Model):
 	processing_id = models.ForeignKey(Processing, on_delete=models.CASCADE)
 	datestamp = models.DateTimeField()
-	event_type = models.ForeignKey(EventType, on_delete=models.CASCADE)
+	event_name = models.ForeignKey(EventType, on_delete=models.CASCADE)
+	video_url = models.URLField(null=True, default=None)
 
 class DetectedObjectType(models.Model):
 	type = models.CharField(max_length=255)
+	description = models.CharField(max_length=255, null=True)
 
 	def __str__(self):
 		return self.type
@@ -52,4 +74,3 @@ class ObjectsDetectionLog(models.Model):
 	location = models.ForeignKey(Location, on_delete=models.CASCADE)
 	type = models.ForeignKey(DetectedObjectType, on_delete=models.CASCADE)
 	count = models.IntegerField(default=0)
-	

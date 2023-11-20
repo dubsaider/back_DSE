@@ -3,7 +3,7 @@ import random
 from pathlib import Path
 import subprocess
 import math
-# import ffmpeg_streaming
+import ffmpeg_streaming
 from django.shortcuts import get_object_or_404
 from django.http import HttpResponse, HttpResponseNotFound
 from django.shortcuts import render
@@ -16,6 +16,11 @@ from .models import (
             Location,
             DetectedObjectType,
             ObjectsDetectionLog,
+            EventType, 
+            Action, 
+            Models, 
+            ComputerVisionModules, 
+            Event
         )
 from .serializers import (
         CameraSerializer, 
@@ -23,8 +28,37 @@ from .serializers import (
         ProcessingSerializer, 
         ObjectsDetectionLogSerializer,
         LocationSerializer,
+        EventTypeSerializer, 
+        ActionSerializer, 
+        ModelsSerializer, 
+        ComputerVisionModulesSerializer, 
+        EventSerializer, 
+        DetectedObjectTypeSerializer
     )
 
+class EventTypeViewSet(generics.ListCreateAPIView):
+    queryset = EventType.objects.all()
+    serializer_class = EventTypeSerializer
+
+class ActionViewSet(generics.ListCreateAPIView):
+    queryset = Action.objects.all()
+    serializer_class = ActionSerializer
+
+class ModelsViewSet(generics.ListCreateAPIView):
+    queryset = Models.objects.all()
+    serializer_class = ModelsSerializer
+
+class ComputerVisionModulesViewSet(generics.ListCreateAPIView):
+    queryset = ComputerVisionModules.objects.all()
+    serializer_class = ComputerVisionModulesSerializer
+
+class EventViewSet(generics.ListCreateAPIView):
+    queryset = Event.objects.all()
+    serializer_class = EventSerializer
+
+class DetectedObjectTypeViewSet(generics.ListCreateAPIView):
+    queryset = DetectedObjectType.objects.all()
+    serializer_class = DetectedObjectTypeSerializer
 
 class CameraList(generics.ListCreateAPIView):
     # quaryset = Camera.objects.all()
@@ -146,13 +180,12 @@ def edit_location(self, id):
     location = self.request.query_params.get('location', None)
     if location is None:
         return HttpResponseNotFound()
-    if id is None:
-        Location.objects.create(location=location)
-    else:
-        loc = Location.objects.filter(pk=id).first()
-        if loc is None:
-           return HttpResponseNotFound()
-        loc.location = location
+   
+    loc = Location.objects.filter(pk=id).first()
+    if loc is None:
+        return HttpResponseNotFound()
+    loc.location = location
+    loc.save()
 
 def delete_location(self, id):
     if id is None:

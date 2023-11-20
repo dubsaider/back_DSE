@@ -6,6 +6,11 @@ from .models import (
     DetectedObjectType, 
     ObjectsDetectionLog, 
     Location,
+    EventType,
+    Action, 
+    Models, 
+    ComputerVisionModules, 
+    Event
     )
 
 
@@ -32,7 +37,7 @@ class ProcessingAdmin(admin.ModelAdmin):
 
 @admin.register(DetectedObjectType)
 class DetectedObjectTypeAdmin(admin.ModelAdmin):
-    list_display = ('id', 'type')
+    list_display = ('id', 'type', 'description')
 
 @admin.register(ObjectsDetectionLog)
 class ObjectsDetectionLogsAdmin(admin.ModelAdmin):
@@ -65,3 +70,8 @@ admin.site.unregister(ObjectsDetectionLog)
 admin.site.register(ObjectsDetectionLog, ObjectsDetectionLogsAdmin)
 admin.site.unregister(Location)
 admin.site.register(Location, LocationsAdmin)
+admin.site.register(EventType)
+admin.site.register(Action)
+admin.site.register(Models)
+admin.site.register(ComputerVisionModules)
+admin.site.register(Event)
