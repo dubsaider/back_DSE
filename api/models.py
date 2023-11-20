@@ -47,14 +47,14 @@ class Action(models.Model):
 	def __str__(self):
 		return self.action_name
 
-class Models(models.Model):
+class Model(models.Model):
 	model_name = models.CharField(max_length=255)
 	model_description = models.CharField(max_length=255, null=True)
 
-class ComputerVisionModules(models.Model):
+class ComputerVisionModule(models.Model):
 	cv_modules_name = models.CharField(max_length=255)
 	cv_modules_description = models.CharField(max_length=255, null=True)
-	model_type = models.ForeignKey(Models, on_delete=models.CASCADE, null=True, default=None)
+	model_type = models.ForeignKey(Model, on_delete=models.CASCADE, null=True, default=None)
 
 class Event(models.Model):
 	processing_id = models.ForeignKey(Processing, on_delete=models.CASCADE)

@@ -8,8 +8,8 @@ from .models import (
     Location,
     EventType,
     Action, 
-    Models, 
-    ComputerVisionModules, 
+    Model, 
+    ComputerVisionModule, 
     Event, 
     DetectedObjectType
     )
@@ -52,14 +52,14 @@ class ActionSerializer(serializers.ModelSerializer):
         model = Action
         fields = '__all__'
 
-class ModelsSerializer(serializers.ModelSerializer):
+class ModelSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Models
+        model = Model
         fields = '__all__'
 
-class ComputerVisionModulesSerializer(serializers.ModelSerializer):
+class ComputerVisionModuleSerializer(serializers.ModelSerializer):
     class Meta:
-        model = ComputerVisionModules
+        model = ComputerVisionModule
         fields = '__all__'
 
 class EventSerializer(serializers.ModelSerializer):

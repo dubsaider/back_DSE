@@ -8,8 +8,8 @@ from .models import (
     Location,
     EventType,
     Action, 
-    Models, 
-    ComputerVisionModules, 
+    Model, 
+    ComputerVisionModule, 
     Event
     )
 
@@ -72,6 +72,6 @@ admin.site.unregister(Location)
 admin.site.register(Location, LocationsAdmin)
 admin.site.register(EventType)
 admin.site.register(Action)
-admin.site.register(Models)
-admin.site.register(ComputerVisionModules)
+admin.site.register(Model)
+admin.site.register(ComputerVisionModule)
 admin.site.register(Event)

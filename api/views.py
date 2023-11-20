@@ -18,8 +18,8 @@ from .models import (
             ObjectsDetectionLog,
             EventType, 
             Action, 
-            Models, 
-            ComputerVisionModules, 
+            Model, 
+            ComputerVisionModule, 
             Event
         )
 from .serializers import (
@@ -30,8 +30,8 @@ from .serializers import (
         LocationSerializer,
         EventTypeSerializer, 
         ActionSerializer, 
-        ModelsSerializer, 
-        ComputerVisionModulesSerializer, 
+        ModelSerializer, 
+        ComputerVisionModuleSerializer, 
         EventSerializer, 
         DetectedObjectTypeSerializer
     )
@@ -45,12 +45,12 @@ class ActionViewSet(generics.ListCreateAPIView):
     serializer_class = ActionSerializer
 
 class ModelsViewSet(generics.ListCreateAPIView):
-    queryset = Models.objects.all()
-    serializer_class = ModelsSerializer
+    queryset = Model.objects.all()
+    serializer_class = ModelSerializer
 
 class ComputerVisionModulesViewSet(generics.ListCreateAPIView):
-    queryset = ComputerVisionModules.objects.all()
-    serializer_class = ComputerVisionModulesSerializer
+    queryset = ComputerVisionModule.objects.all()
+    serializer_class = ComputerVisionModuleSerializer
 
 class EventViewSet(generics.ListCreateAPIView):
     queryset = Event.objects.all()
