@@ -12,7 +12,7 @@ from .models import (
     ComputerVisionModule, 
     Event, 
     DetectedObjectType
-    )
+)
 
 
 class CameraSerializer(serializers.ModelSerializer):
@@ -31,8 +31,9 @@ class ProcessingSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class ObjectsDetectionLogSerializer(serializers.ModelSerializer):
-    location = serializers.CharField(source='location.location')
-    type = serializers.CharField(source='type.type')
+    start_datestamp = serializers.DateTimeField(write_only=True, required=False)
+    end_datestamp = serializers.DateTimeField(write_only=True, required=False)
+
     class Meta:
         model = ObjectsDetectionLog
         fields = '__all__'
