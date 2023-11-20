@@ -3,6 +3,9 @@ import random
 from pathlib import Path
 import subprocess
 import math
+
+import json
+
 import ffmpeg_streaming
 from django.shortcuts import get_object_or_404
 from django.http import HttpResponse, HttpResponseNotFound
@@ -21,6 +24,15 @@ from .models import (
             Location,
             DetectedObjectType,
             ObjectsDetectionLog,
+            EventType, 
+            Action, 
+            Model, 
+            ComputerVisionModule, 
+            Event,
+            ProcessEvent,
+            ProcessEventToAction,
+            Process,
+            ProcessToProcessEvent,
         )
 from .serializers import (
         CameraSerializer, 
@@ -93,6 +105,7 @@ class ProcessingList(generics.ListCreateAPIView):
 class ObjectsDetectionLogsList(generics.ListCreateAPIView):
     serializer_class = ObjectsDetectionLogSerializer
 
+
     def get_queryset(self):
         queryset = ObjectsDetectionLog.objects.all()
 
@@ -121,6 +134,205 @@ class ObjectsDetectionLogsList(generics.ListCreateAPIView):
 
         return queryset.order_by('datestamp')
     
+################################################
+#                   FIXIT                      #
+################################################
+
+
+from django.views.decorators.csrf import csrf_exempt
+
+@csrf_exempt
+def my_handler(self):
+    body_unicode = self.body.decode('utf-8')
+    body = json.loads(body_unicode)
+    # content = body['content']
+    events = body['msg']['events']
+    process_events = []
+    for event in events:
+        event_name=event['event_name']
+        event_name_id = EventType.objects.filter(event_name=event_name).first()
+        actions = []
+
+        for a in event['event_actions']:
+            actions.append(Action.objects.filter(action_name=a).first())
+        
+        process_event = ProcessEvent.objects.create(
+            event=event_name_id,
+            parameters=event['parameters'])
+        
+        process_events.append(process_event)
+
+        for a in actions:
+            ProcessEventToAction.objects.create(process_event=process_event, action=a)
+
+    process = Process.objects.create(
+        cv_module=ComputerVisionModule.objects.filter(cv_modules_name=body['msg']['parameters']['cvmode']).first(),
+        camera=Camera.objects.filter(camera_ip=body['msg']['parameters']['ip']).first()
+    )
+
+    for e in process_events:
+        ProcessToProcessEvent.objects.create(
+            process=process,
+            process_event=e
+        )
+    
+
+
+###################
+#    Cameras      #
+###################
+
+def create_camera(self):
+    ip = self.request.query_params.get('camera_ip', None)
+    name = self.request.query_params.get('camera_name', None)
+    in_loc = self.request.query_params.get('input_location', None)
+    out_loc = self.request.query_params.get('output_location', None)
+    description = self.request.query_params.get('camera_description', None)
+
+    if ip is None or in_loc is None or name is None:
+        return HttpResponseNotFound()
+    
+    Camera.objects.create(camera_ip=ip,
+                            camera_name=name,
+                            input_location=Location.objects.filter(pk=in_loc).first(),
+                            output_location=Location.objects.filter(pk=out_loc).first() if out_loc is not None else None,
+                            camera_description=description if description is not None else "",
+                            )
+
+
+def edit_camera(self, id):
+    ip = self.request.query_params.get('camera_ip', None)
+    name = self.request.query_params.get('camera_name', None)
+    in_loc = self.request.query_params.get('input_location', None)
+    out_loc = self.request.query_params.get('output_location', None)
+    description = self.request.query_params.get('camera_description', None)
+
+    camera = Camera.objects.filter(pk=id).first()
+    if not camera:
+        return HttpResponseNotFound() 
+    if ip is not None:
+        camera.camera_ip=ip
+    if name is not None:
+        camera.camera_name=name
+    loc = Location.objects.filter(pk=in_loc).first()
+    if in_loc is not None and loc:
+        camera.input_location = loc
+    loc = Location.objects.filter(pk=out_loc).first()
+    if out_loc is not None:
+        camera.output_location = loc
+    if description is not None:
+        camera.camera_description=description
+    camera.save()
+
+
+def delete_camera(self, id):
+    if id is None:
+        return HttpResponseNotFound()
+    camera = Camera.objects.filter(pk=id).delete()
+
+###################
+#    Location     #
+###################
+
+def create_location(self):
+    location = self.request.query_params.get('location', None)
+    if location is None:
+        return HttpResponseNotFound()
+    Location.objects.create(location=location)
+
+def edit_location(self, id):
+    location = self.request.query_params.get('location', None)
+    if location is None:
+        return HttpResponseNotFound()
+   
+    loc = Location.objects.filter(pk=id).first()
+    if loc is None:
+        return HttpResponseNotFound()
+    loc.location = location
+    loc.save()
+
+def delete_location(self, id):
+    if id is None:
+        return HttpResponseNotFound()
+    camera = Location.objects.filter(pk=id).delete()
+
+###################
+#    Processing   #
+###################
+
+def create_processing(self):
+    camera = self.request.query_params.get('camera', None)
+    unit = self.request.query_params.get('unit', None)
+    processing_config = self.request.query_params.get('processing_config', None)
+    if camera is None or unit is None or processing_config is None:
+        return HttpResponseNotFound()
+    Processing.objects.create(camera=camera,
+                                unit=unit,
+                                processing_config=processing_config,
+                                )
+
+def edit_processing(self, id):
+    camera = self.request.query_params.get('camera', None)
+    unit = self.request.query_params.get('unit', None)
+    processing_config = self.request.query_params.get('processing_config', None)
+
+    process = Processing.objects.filter(pk=id).first()
+    if not process:
+        return HttpResponseNotFound()
+    camera = Camera.objects.filter(pk=camera).first()
+    if camera is not None and camera:
+        process.camera = camera
+    unit = ClusterUnit.objects.filter(pk=camera).first()
+    if unit is not None and unit:
+        process.unit = unit
+    if processing_config is not None:
+        process.processing_config = processing_config
+    
+def delete_processing(self, id):
+    if id is None:
+        return HttpResponseNotFound()
+    camera = Processing.objects.filter(pk=id).delete()
+
+####################
+#    ClusterUnit   #
+####################
+
+def create_cluster_unit(self):
+    unit_name = self.request.query_params.get('unit_name', None)
+    unit_ip = self.request.query_params.get('unit_ip', None)
+    unit_config = self.request.query_params.get('unit_config', None)
+    if unit_name is None or unit_ip is None or unit_config is None:
+        return HttpResponseNotFound()
+    ClusterUnit.objects.create(unit_name=unit_name,
+                                unit_ip=unit_ip,
+                                unit_config=unit_config,
+                                )
+
+def edit_cluster_unit(self, id):
+    unit_name = self.request.query_params.get('unit_name', None)
+    unit_ip = self.request.query_params.get('unit_ip', None)
+    unit_config = self.request.query_params.get('unit_config', None)
+
+    unit = ClusterUnit.objects.filter(pk=id).first()
+    if not unit:
+        return HttpResponseNotFound()
+
+    if unit_name is not None:
+        unit.unit_name = unit_name
+    if unit_ip is not None:
+        unit.unit_ip = unit_ip
+    if unit_config is not None:
+        unit.unit_config = unit_config
+
+def delete_cluster_unit(self, id):
+    if id is None:
+        return HttpResponseNotFound()
+    camera = ClusterUnit.objects.filter(pk=id).delete()   
+
+################################################
+#                 FIXITEND                     #
+################################################
+
 def video_hls_view(request, filename):
     # video = get_object_or_404(Video, id=video_id)
 

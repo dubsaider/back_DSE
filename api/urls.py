@@ -7,10 +7,14 @@ from .views import (
     video_hls_view,
     get_camera_view,
     camera_methods,
+
+    my_handler,
     # generate_data,
 )
 
 urlpatterns = [
+    path('testing/', my_handler, name='test'),
+
     path('cameras/', camera_methods, name='camera-list'), #views.camerafunctions
     path('cameras/<int:id>', camera_methods, name='camera-single'),
     path('units/', ClusterUnitList.as_view(), name='unit-list'),
