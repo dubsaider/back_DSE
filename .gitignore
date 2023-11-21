@@ -32,4 +32,4 @@ dist/
 vid/
 .vid/
 
-*env.files
+cameras/

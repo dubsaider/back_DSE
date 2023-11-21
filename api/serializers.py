@@ -5,18 +5,21 @@ from .models import (
     Processing, 
     DetectedObjectType, 
     ObjectsDetectionLog,
-    Process,
-    ComputerVisionModule,
-    ProcessEvent,
+    Location,
+    EventType,
     Action,
-    EventType
-    )
+    Model,
+    ComputerVisionModule,
+    Event,
+    Process,
+    ProcessEvent,
+)
 
 
 class CameraSerializer(serializers.ModelSerializer):
     class Meta:
         model = Camera
-        fields = ('camera_ip',)
+        fields = '__all__'
 
 class ClusterUnitSerializer(serializers.ModelSerializer):
     class Meta:
@@ -28,34 +31,57 @@ class ProcessingSerializer(serializers.ModelSerializer):
         model = Processing
         fields = '__all__'
 
-
 class ObjectsDetectionLogSerializer(serializers.ModelSerializer):
-    location = serializers.CharField(source='location.location')
-    type = serializers.CharField(source='type.type')
+    start_datestamp = serializers.DateTimeField(write_only=True, required=False)
+    end_datestamp = serializers.DateTimeField(write_only=True, required=False)
+
     class Meta:
         model = ObjectsDetectionLog
         fields = '__all__'
 
+class LocationSerializer(serializers.ModelSerializer):
+     class Meta:
+        model = Location
+        fields = '__all__'
+
+class EventTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EventType
+        fields = '__all__'
+
+class ActionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Action
+        fields = '__all__'
+
+class ModelSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Model
+        fields = '__all__'
 
 class ComputerVisionModuleSerializer(serializers.ModelSerializer):
     class Meta:
         model = ComputerVisionModule
-        fields = ('cv_modules_name',)
+        fields = '__all__'
 
-class ActionSerializer(serializers.ModelSerializer):
+class EventSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Event
+        fields = '__all__'
+
+class DetectedObjectTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DetectedObjectType
+        fields = '__all__'
+
+class ActionSerializerForProcessEvent(serializers.ModelSerializer):
     class Meta:
         model = Action
         fields = ('action_name', 'parameters',)
 
 
-class EventTypeSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = EventType
-        fields = ('event_name', )
-
-
 class ProcessEventSerializer(serializers.ModelSerializer):
-    actions = ActionSerializer(read_only=True, many=True)
+    actions = ActionSerializerForProcessEvent(read_only=True, many=True)
     event = EventTypeSerializer()
     class Meta:
         model = ProcessEvent
