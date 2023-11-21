@@ -11,8 +11,8 @@ class Camera(models.Model):
 	camera_name = models.CharField(max_length=255)
 	camera_ip = models.CharField(max_length=15)
 	input_location = models.ForeignKey(Location, on_delete=models.CASCADE, related_name='imput_location')
-	output_location = models.ForeignKey(Location, on_delete=models.CASCADE, null=True, related_name='output_location')
-	camera_description = models.CharField(max_length=255)
+	output_location = models.ForeignKey(Location, on_delete=models.CASCADE, related_name='output_location')
+	camera_description = models.CharField(max_length=255, null=True, default='null')
 
 	def __str__(self):
 		return self.camera_name
@@ -32,7 +32,7 @@ class Model(models.Model):
 class Processing(models.Model):
 	camera = models.ForeignKey(Camera, on_delete=models.CASCADE)
 	unit = models.ForeignKey(ClusterUnit, on_delete=models.CASCADE)
-	processing_config = models.JSONField(default=None)
+	processing_config = models.JSONField(default=None, null=True)
 	result_url = models.URLField(null=True, default=None)
 
 class ComputerVisionModule(models.Model):
