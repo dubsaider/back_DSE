@@ -7,11 +7,12 @@ from .models import (
     ObjectsDetectionLog,
     Location,
     EventType,
-    Action, 
-    Model, 
-    ComputerVisionModule, 
-    Event, 
-    DetectedObjectType
+    Action,
+    Model,
+    ComputerVisionModule,
+    Event,
+    Process,
+    ProcessEvent,
 )
 
 
@@ -72,3 +73,30 @@ class DetectedObjectTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = DetectedObjectType
         fields = '__all__'
+
+class ActionSerializerForProcessEvent(serializers.ModelSerializer):
+    class Meta:
+        model = Action
+        fields = ('action_name', 'parameters',)
+
+
+class ProcessEventSerializer(serializers.ModelSerializer):
+    actions = ActionSerializerForProcessEvent(read_only=True, many=True)
+    event = EventTypeSerializer()
+    class Meta:
+        model = ProcessEvent
+        fields = ('event', 'actions', 'parameters')
+
+
+class ProcessSerializer(serializers.ModelSerializer):
+    # cv_module = ComputerVisionModuleSerializer()
+    cv_modules_name = serializers.CharField(source='cv_module.cv_modules_name')
+
+    process_events = ProcessEventSerializer(read_only=True, many=True)
+    class Meta:
+        model = Process
+        fields = ('__all__')
+        # fields = ('cv_module', )
+
+
+

@@ -6,6 +6,7 @@ from django.shortcuts import get_object_or_404
 from django.http import HttpResponse, HttpResponseNotFound
 from rest_framework.response import Response
 from rest_framework import generics
+from django.views.decorators.csrf import csrf_exempt
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from datetime import datetime, timedelta
@@ -16,25 +17,31 @@ from .models import (
             Location,
             DetectedObjectType,
             ObjectsDetectionLog,
-            EventType, 
-            Action, 
-            Model, 
-            ComputerVisionModule, 
-            Event
+            EventType,
+            Action,
+            Model,
+            ComputerVisionModule,
+            Event,
+            ProcessEvent,
+            Process,
         )
 from .serializers import (
         CameraSerializer, 
         ClusterUnitSerializer, 
         ProcessingSerializer, 
         ObjectsDetectionLogSerializer,
+        ProcessSerializer,
         LocationSerializer,
-        EventTypeSerializer, 
-        ActionSerializer, 
-        ModelSerializer, 
-        ComputerVisionModuleSerializer, 
-        EventSerializer, 
+        EventTypeSerializer,
+        ActionSerializer,
+        ModelSerializer,
+        ComputerVisionModuleSerializer,
+        EventSerializer,
         DetectedObjectTypeSerializer
     )
+import json
+from rest_framework.decorators import api_view
+
 
 class EventTypeViewSet(viewsets.ModelViewSet):
     queryset = EventType.objects.all()
@@ -72,13 +79,13 @@ class ClusterUnitViewSet(viewsets.ModelViewSet):
     serializer_class = ClusterUnitSerializer
 
 class ProcessingViewSet(viewsets.ModelViewSet):
-    queryset = Processing.objects.all()
-    serializer_class = ProcessingSerializer
+    queryset = Process.objects.all()
+    serializer_class = ProcessSerializer
 
 class LocationViewSet(viewsets.ModelViewSet):
     queryset = Location.objects.all()
     serializer_class = LocationSerializer
-    
+
 class ObjectsDetectionLogViewSet(viewsets.ViewSet):
     serializer_class = ObjectsDetectionLogSerializer
 
@@ -109,7 +116,7 @@ class ObjectsDetectionLogViewSet(viewsets.ViewSet):
                 queryset = queryset.filter(location__pk=location)
             else:
                 queryset = queryset.filter(location__location=location)
-        
+
         if detection_type:
             queryset = queryset.filter(type__type=detection_type)
 
@@ -121,7 +128,40 @@ class ObjectsDetectionLogViewSet(viewsets.ViewSet):
         object_detection_log = get_object_or_404(queryset, pk=pk)
         serializer = ObjectsDetectionLogSerializer(object_detection_log)
         return Response(serializer.data)
-    
+
+@api_view(['POST'])
+@csrf_exempt 
+def process_handler(self):
+    body_unicode = self.body.decode('utf-8')
+    body = json.loads(body_unicode)  
+    events = body['msg']['events']
+    process_events = []
+    for event in events:
+        event_name = event['event_name']
+        event_name_id = EventType.objects.filter(
+            event_name=event_name).first() 
+        actions = []
+
+        for a in event['event_actions']:
+            actions.append(
+                Action.objects.filter(action_name=a).first()) 
+
+        process_event = ProcessEvent.objects.create(
+            event=event_name_id,
+            parameters=event['parameters'])
+
+        process_event.actions.set(actions)
+
+        process_events.append(process_event)
+
+    process = Process.objects.create(
+        cv_module=ComputerVisionModule.objects.filter(cv_modules_name=body['msg']['parameters']['cvmode']).first(),
+        camera=Camera.objects.filter(camera_ip=body['msg']['parameters']['ip']).first(),
+    )
+
+    process.process_events.set(process_events)
+
+    return Response({"status": "success"})
 
 def video_hls_view(request, filename):
     video_path = '/home/ubuntuser/back_DSE/vid/L.mp4'
