@@ -2,7 +2,7 @@ from django.urls import path, include
 from rest_framework import routers
 from .views import (
     EventTypeViewSet, ActionViewSet, ModelsViewSet, ComputerVisionModulesViewSet, EventViewSet, DetectedObjectTypeViewSet, CameraViewSet, ObjectsDetectionLogViewSet, ClusterUnitViewSet, ProcessingViewSet, LocationViewSet, CameraViewSet,
-    my_handler,
+    process_handler,
 )
 from .views import ( video_hls_view, get_camera_view )
 
@@ -20,7 +20,7 @@ router.register('processings', ProcessingViewSet, basename='processings-viewset'
 router.register('locations', LocationViewSet, basename='locations-viewset')
 
 urlpatterns = [
-    path('testing/', my_handler, name='test'),
+    path('process-create/', process_handler, name='process-create'),
     path('viewsets/', include(router.urls)),
     path('video/<str:filename>', video_hls_view, name='video-hls'),
     path('camera/<int:pk>/<str:filename>', get_camera_view, name='get_camera'),

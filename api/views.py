@@ -39,6 +39,7 @@ from .serializers import (
         DetectedObjectTypeSerializer
     )
 import json
+from rest_framework.decorators import api_view
 
 
 class EventTypeViewSet(viewsets.ModelViewSet):
@@ -77,8 +78,8 @@ class ClusterUnitViewSet(viewsets.ModelViewSet):
     serializer_class = ClusterUnitSerializer
 
 class ProcessingViewSet(viewsets.ModelViewSet):
-    queryset = Processing.objects.all()
-    serializer_class = ProcessingSerializer
+    queryset = Process.objects.all()
+    serializer_class = ProcessSerializer
 
 class LocationViewSet(viewsets.ModelViewSet):
     queryset = Location.objects.all()
@@ -135,17 +136,9 @@ class ObjectsDetectionLogViewSet(viewsets.ViewSet):
 from django.views.decorators.csrf import csrf_exempt
 
 
-@api_view(['POST', 'GET'])
+@api_view(['POST'])
 @csrf_exempt  # POSTMAN requests wouldn't work without this. *to fix/remove*
-def my_handler(self):  # save data from json with events and actions to database
-
-    if self.method == 'GET':
-        processes = Process.objects.prefetch_related('process_events')
-        # for process in processes:
-        #     process.cv_module.cv_modules_name
-        process_serializer = ProcessSerializer(processes, many=True)
-        return Response({"status": "success", "data": process_serializer.data}, status=status.HTTP_200_OK)
-
+def process_handler(self):  # save data from json with events and actions to database
     body_unicode = self.body.decode('utf-8')
     body = json.loads(body_unicode)  # load json
     # content = body['content']
@@ -176,7 +169,7 @@ def my_handler(self):  # save data from json with events and actions to database
 
     process.process_events.set(process_events)
 
-    return JsonResponse("OK")
+    return Response({"status": "success"})
 
 ###################
 #    Cameras      #
