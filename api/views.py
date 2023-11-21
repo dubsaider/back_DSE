@@ -100,6 +100,37 @@ class CameraGroupViewSet(viewsets.ModelViewSet):
     queryset = CameraGroup.objects.all()
     serializer_class = CameraGroupSerializer
 
+    @swagger_auto_schema(manual_parameters=[
+        openapi.Parameter('group_name', openapi.IN_QUERY, description="Insert cameras into group", type=openapi.TYPE_STRING),
+        openapi.Parameter('group_type', openapi.IN_QUERY, description="Insert cameras into group", type=openapi.TYPE_INTEGER),
+        openapi.Parameter('cameras', openapi.IN_QUERY, description="Insert cameras into group", type=openapi.TYPE_ARRAY, items=openapi.Items(type=openapi.TYPE_INTEGER)),
+    ])
+    def create(self, request):
+        cameras = self.request.query_params.get('cameras', None)
+        group_name = self.request.query_params.get('group_name', None)
+        group_type = self.request.query_params.get('group_type', None)
+
+        if group_name is None or group_type is None:
+            return HttpResponseNotFound()
+        
+        group = CameraGroup.objects.create(
+            group_name=group_name,
+            group_type=GroupType.objects.filter(pk=group_type).first()
+        )
+
+        if cameras is not None:
+            cameras = cameras.split(',')
+            for camera in cameras:
+                camera_obj = Camera.objects.filter(pk=camera).first()
+                if camera_obj is None:
+                    continue
+                CameraToGroup.objects.create(
+                    group_id=group,
+                    camera_id=camera_obj,
+                )
+        # TODO: Add normal response in "Denis`s style"
+        return Response({"status": "success"})
+
 class CameraToGroupViewSet(viewsets.ModelViewSet):
     queryset = CameraToGroup.objects.all()
     serializer_class = CameraToGroupSerializer
