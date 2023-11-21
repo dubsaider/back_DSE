@@ -30,15 +30,14 @@ from .models import (
             ComputerVisionModule, 
             Event,
             ProcessEvent,
-            ProcessEventToAction,
             Process,
-            ProcessToProcessEvent,
         )
 from .serializers import (
         CameraSerializer, 
         ClusterUnitSerializer, 
         ProcessingSerializer, 
         ObjectsDetectionLogSerializer,
+        ProcessSerializer,
     )
 
 
@@ -141,8 +140,20 @@ class ObjectsDetectionLogsList(generics.ListCreateAPIView):
 # my_handler only works if all events and actions presented in json already exist in database
 from django.views.decorators.csrf import csrf_exempt
 
+@api_view(['POST', 'GET'])
 @csrf_exempt # POSTMAN requests wouldn't work without this. *to fix/remove*
 def my_handler(self): # save data from json with events and actions to database
+
+
+    if self.method=='GET':
+        processes = Process.objects.prefetch_related('process_events')
+        # for process in processes:
+        #     process.cv_module.cv_modules_name
+        process_serializer = ProcessSerializer(processes, many=True)
+        return Response({"status":"success", "data": process_serializer.data}, status= status.HTTP_200_OK)
+
+
+
     body_unicode = self.body.decode('utf-8')
     body = json.loads(body_unicode) # load json
     # content = body['content']
@@ -160,23 +171,18 @@ def my_handler(self): # save data from json with events and actions to database
             event=event_name_id,
             parameters=event['parameters'])
         
-        process_events.append(process_event)
+        process_event.actions.set(actions)
 
-        for a in actions:
-            ProcessEventToAction.objects.create(process_event=process_event, action=a)
+        process_events.append(process_event)
 
     process = Process.objects.create(
         cv_module=ComputerVisionModule.objects.filter(cv_modules_name=body['msg']['parameters']['cvmode']).first(),
-        camera=Camera.objects.filter(camera_ip=body['msg']['parameters']['ip']).first()
+        camera=Camera.objects.filter(camera_ip=body['msg']['parameters']['ip']).first(),
     )
 
-    for e in process_events:
-        ProcessToProcessEvent.objects.create(
-            process=process,
-            process_event=e
-        )
+    process.process_events.set(process_events)
 
-
+    return JsonResponse("OK")
 ###################
 #    Cameras      #
 ###################

@@ -34,6 +34,9 @@ class ComputerVisionModule(models.Model):
 	cv_modules_description = models.CharField(max_length=255, null=True)
 	model_type = models.ForeignKey(Model, on_delete=models.CASCADE, null=True, default=None)
 
+	def __str__(self):
+		return self.cv_modules_name
+
 class DetectedObjectType(models.Model):
 	type = models.CharField(max_length=255)
 	description = models.CharField(max_length=255, null=True)
@@ -90,18 +93,21 @@ class Action(models.Model):
 
 class ProcessEvent(models.Model):
 	event = models.ForeignKey(EventType, on_delete=models.CASCADE)
+	actions = models.ManyToManyField(Action)
 	parameters = models.JSONField(null=True, default=None)
-
-
-class ProcessEventToAction(models.Model):
-	process_event = models.ForeignKey(ProcessEvent, on_delete=models.CASCADE)
-	action = models.ForeignKey(Action, on_delete=models.CASCADE)
-
 
 class Process(models.Model):
 	cv_module = models.ForeignKey(ComputerVisionModule, on_delete=models.CASCADE)
 	camera = models.ForeignKey(Camera, on_delete=models.CASCADE)
+	process_events = models.ManyToManyField(ProcessEvent)
+	
 
-class ProcessToProcessEvent(models.Model):
-	process = models.ForeignKey(Process, on_delete=models.CASCADE)
-	process_event = models.ForeignKey(ProcessEvent, on_delete=models.CASCADE)
+
+# class ProcessEventToAction(models.Model):
+# 	process_event = models.ForeignKey(ProcessEvent, on_delete=models.CASCADE)
+# 	action = models.ForeignKey(Action, on_delete=models.CASCADE)
+
+
+# class ProcessToProcessEvent(models.Model):
+# 	process = models.ForeignKey(Process, on_delete=models.CASCADE)
+# 	process_event = models.ForeignKey(ProcessEvent, on_delete=models.CASCADE)
