@@ -138,23 +138,23 @@ class ObjectsDetectionLogsList(generics.ListCreateAPIView):
 #                   FIXIT                      #
 ################################################
 
-
+# my_handler only works if all events and actions presented in json already exist in database
 from django.views.decorators.csrf import csrf_exempt
 
-@csrf_exempt
-def my_handler(self):
+@csrf_exempt # POSTMAN requests wouldn't work without this. *to fix/remove*
+def my_handler(self): # save data from json with events and actions to database
     body_unicode = self.body.decode('utf-8')
-    body = json.loads(body_unicode)
+    body = json.loads(body_unicode) # load json
     # content = body['content']
-    events = body['msg']['events']
+    events = body['msg']['events'] # get all events
     process_events = []
-    for event in events:
+    for event in events: # iterate through events, get id from db
         event_name=event['event_name']
-        event_name_id = EventType.objects.filter(event_name=event_name).first()
+        event_name_id = EventType.objects.filter(event_name=event_name).first() # get id by using name (according to example json structure)
         actions = []
 
         for a in event['event_actions']:
-            actions.append(Action.objects.filter(action_name=a).first())
+            actions.append(Action.objects.filter(action_name=a).first()) # for each event get list of action ids(name->id)
         
         process_event = ProcessEvent.objects.create(
             event=event_name_id,
@@ -175,7 +175,6 @@ def my_handler(self):
             process=process,
             process_event=e
         )
-    
 
 
 ###################
