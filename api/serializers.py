@@ -13,6 +13,9 @@ from .models import (
     Event,
     Process,
     ProcessEvent,
+    GroupType,
+    CameraGroup,
+    CameraToGroup
 )
 
 
@@ -99,4 +102,18 @@ class ProcessSerializer(serializers.ModelSerializer):
         # fields = ('cv_module', )
 
 
+class GroupTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GroupType
+        fields = '__all__'
+
+class CameraGroupSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CameraGroup
+        fields = '__all__'
+
+class CameraToGroupSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CameraToGroup
+        fields = '__all__'
 

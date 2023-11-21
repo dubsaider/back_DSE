@@ -10,7 +10,11 @@ from .models import (
     Action, 
     Model, 
     ComputerVisionModule, 
-    Event
+    Event,
+    Process,
+    GroupType,
+    CameraGroup,
+    CameraToGroup,
     )
 
 
@@ -75,3 +79,7 @@ admin.site.register(Action)
 admin.site.register(Model)
 admin.site.register(ComputerVisionModule)
 admin.site.register(Event)
+admin.site.register(Process)
+admin.site.register(GroupType)
+admin.site.register(CameraGroup)
+admin.site.register(CameraToGroup)

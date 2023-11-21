@@ -24,6 +24,9 @@ from .models import (
             Event,
             ProcessEvent,
             Process,
+            GroupType,
+            CameraGroup,
+            CameraToGroup,
         )
 from .serializers import (
         CameraSerializer, 
@@ -37,7 +40,10 @@ from .serializers import (
         ModelSerializer,
         ComputerVisionModuleSerializer,
         EventSerializer,
-        DetectedObjectTypeSerializer
+        DetectedObjectTypeSerializer,
+        GroupTypeSerializer,
+        CameraGroupSerializer,
+        CameraToGroupSerializer,
     )
 import json
 from rest_framework.decorators import api_view
@@ -86,6 +92,18 @@ class LocationViewSet(viewsets.ModelViewSet):
     queryset = Location.objects.all()
     serializer_class = LocationSerializer
 
+class GroupTypeViewSet(viewsets.ModelViewSet):
+    queryset = GroupType.objects.all()
+    serializer_class = GroupTypeSerializer
+
+class CameraGroupViewSet(viewsets.ModelViewSet):
+    queryset = CameraGroup.objects.all()
+    serializer_class = CameraGroupSerializer
+
+class CameraToGroupViewSet(viewsets.ModelViewSet):
+    queryset = CameraToGroup.objects.all()
+    serializer_class = CameraToGroupSerializer
+
 class ObjectsDetectionLogViewSet(viewsets.ViewSet):
     serializer_class = ObjectsDetectionLogSerializer
 
@@ -129,6 +147,37 @@ class ObjectsDetectionLogViewSet(viewsets.ViewSet):
         serializer = ObjectsDetectionLogSerializer(object_detection_log)
         return Response(serializer.data)
 
+@swagger_auto_schema(method='post', request_body=openapi.Schema(
+    type=openapi.TYPE_OBJECT,
+    properties={
+        'msg': openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'events': openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            'event_name': openapi.Schema(type=openapi.TYPE_STRING),
+                            'event_actions': openapi.Schema(
+                                type=openapi.TYPE_ARRAY,
+                                items=openapi.Schema(type=openapi.TYPE_STRING)
+                            ),
+                            'parameters': openapi.Schema(type=openapi.TYPE_OBJECT)
+                        }
+                    )
+                ),
+                'parameters': openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'cvmode': openapi.Schema(type=openapi.TYPE_STRING),
+                        'ip': openapi.Schema(type=openapi.TYPE_STRING)
+                    }
+                )
+            }
+        )
+    }
+))
 @api_view(['POST'])
 @csrf_exempt 
 def process_handler(self):
@@ -201,8 +250,6 @@ def get_camera_view(request, pk, filename):
     if f'camera_{pk}' not in ACTIVE_STREAMS.keys():
         if not os.path.exists(hls_output_dir):
             os.makedirs(hls_output_dir)
-        
-        
 
         ACTIVE_STREAMS[f'camera_{pk}'] = start_stream(camera_ip, hls_output_dir, pk)
 

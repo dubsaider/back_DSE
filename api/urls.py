@@ -1,8 +1,7 @@
 from django.urls import path, include
 from rest_framework import routers
 from .views import (
-    EventTypeViewSet, ActionViewSet, ModelsViewSet, ComputerVisionModulesViewSet, EventViewSet, DetectedObjectTypeViewSet, CameraViewSet, ObjectsDetectionLogViewSet, ClusterUnitViewSet, ProcessingViewSet, LocationViewSet, CameraViewSet,
-    process_handler,
+    EventTypeViewSet, ActionViewSet, ModelsViewSet, ComputerVisionModulesViewSet, EventViewSet, DetectedObjectTypeViewSet, CameraViewSet, ObjectsDetectionLogViewSet, ClusterUnitViewSet, ProcessingViewSet, LocationViewSet, CameraViewSet, GroupTypeViewSet, CameraGroupViewSet, CameraToGroupViewSet,
 )
 from .views import ( video_hls_view, get_camera_view )
 
@@ -18,9 +17,12 @@ router.register('objects-detection-logs', ObjectsDetectionLogViewSet, basename='
 router.register('cluster-units', ClusterUnitViewSet, basename='cluster-units-viewset')
 router.register('processings', ProcessingViewSet, basename='processings-viewset')
 router.register('locations', LocationViewSet, basename='locations-viewset')
+router.register('group-type', GroupTypeViewSet ,basename='group-type-viewset')
+router.register('camera-group', CameraGroupViewSet ,basename='camera-group-viewset')
+router.register('camera-to-group', CameraToGroupViewSet ,basename='camera-to-group-viewset')
 
 urlpatterns = [
-    path('process-create/', process_handler, name='process-create'),
+    # path('process-handler/', ProcessHandlerView.as_view(), name='process-handler'),
     path('viewsets/', include(router.urls)),
     path('video/<str:filename>', video_hls_view, name='video-hls'),
     path('camera/<int:pk>/<str:filename>', get_camera_view, name='get_camera'),
