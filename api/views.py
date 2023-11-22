@@ -192,70 +192,72 @@ class ObjectsDetectionLogViewSet(viewsets.ViewSet):
         serializer = ObjectsDetectionLogSerializer(object_detection_log)
         return Response(serializer.data)
 
-@swagger_auto_schema(method='post', request_body=openapi.Schema(
-    type=openapi.TYPE_OBJECT,
-    properties={
-        'msg': openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            properties={
-                'events': openapi.Schema(
-                    type=openapi.TYPE_ARRAY,
-                    items=openapi.Schema(
+class ProcessingViewSet(viewsets.ModelViewSet):
+    queryset = Process.objects.all()
+    serializer_class = ProcessSerializer
+    @swagger_auto_schema(request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            'msg': openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'events': openapi.Schema(
+                        type=openapi.TYPE_ARRAY,
+                        items=openapi.Schema(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                'event_name': openapi.Schema(type=openapi.TYPE_STRING),
+                                'event_actions': openapi.Schema(
+                                    type=openapi.TYPE_ARRAY,
+                                    items=openapi.Schema(type=openapi.TYPE_STRING)
+                                ),
+                                'parameters': openapi.Schema(type=openapi.TYPE_OBJECT)
+                            }
+                        )
+                    ),
+                    'parameters': openapi.Schema(
                         type=openapi.TYPE_OBJECT,
                         properties={
-                            'event_name': openapi.Schema(type=openapi.TYPE_STRING),
-                            'event_actions': openapi.Schema(
-                                type=openapi.TYPE_ARRAY,
-                                items=openapi.Schema(type=openapi.TYPE_STRING)
-                            ),
-                            'parameters': openapi.Schema(type=openapi.TYPE_OBJECT)
+                            'cvmode': openapi.Schema(type=openapi.TYPE_STRING),
+                            'ip': openapi.Schema(type=openapi.TYPE_STRING)
                         }
                     )
-                ),
-                'parameters': openapi.Schema(
-                    type=openapi.TYPE_OBJECT,
-                    properties={
-                        'cvmode': openapi.Schema(type=openapi.TYPE_STRING),
-                        'ip': openapi.Schema(type=openapi.TYPE_STRING)
-                    }
-                )
-            }
+                }
+            )
+        }
+    ))
+
+    def create(self, request):
+        body = request.data
+        events = body['msg']['events']
+        process_events = []
+        for event in events:
+            event_name = event['event_name']
+            event_name_id = EventType.objects.filter(
+                event_name=event_name).first() 
+            actions = []
+
+            for a in event['event_actions']:
+                actions.append(
+                    Action.objects.filter(action_name=a).first()) 
+
+            process_event = ProcessEvent.objects.create(
+                event=event_name_id,
+                parameters=event['parameters'])
+
+            process_event.actions.set(actions)
+
+            process_events.append(process_event)
+
+        process = Process.objects.create(
+            cv_module=ComputerVisionModule.objects.filter(cv_modules_name=body['msg']['parameters']['cvmode']).first(),
+            camera=Camera.objects.filter(camera_ip=body['msg']['parameters']['ip']).first(),
         )
-    }
-))
-@api_view(['POST'])
-@csrf_exempt 
-def process_handler(self):
-    body_unicode = self.body.decode('utf-8')
-    body = json.loads(body_unicode)  
-    events = body['msg']['events']
-    process_events = []
-    for event in events:
-        event_name = event['event_name']
-        event_name_id = EventType.objects.filter(
-            event_name=event_name).first() 
-        actions = []
 
-        for a in event['event_actions']:
-            actions.append(
-                Action.objects.filter(action_name=a).first()) 
+        process.process_events.set(process_events)
 
-        process_event = ProcessEvent.objects.create(
-            event=event_name_id,
-            parameters=event['parameters'])
+        return Response({"status": "Success"})
 
-        process_event.actions.set(actions)
-
-        process_events.append(process_event)
-
-    process = Process.objects.create(
-        cv_module=ComputerVisionModule.objects.filter(cv_modules_name=body['msg']['parameters']['cvmode']).first(),
-        camera=Camera.objects.filter(camera_ip=body['msg']['parameters']['ip']).first(),
-    )
-
-    process.process_events.set(process_events)
-
-    return Response({"status": "success"})
 
 def video_hls_view(request, filename):
     video_path = '/home/ubuntuser/back_DSE/vid/L.mp4'
