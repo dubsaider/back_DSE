@@ -76,10 +76,24 @@ class DetectedObjectTypeViewSet(viewsets.ModelViewSet):
 class CameraViewSet(viewsets.ModelViewSet):
     # quaryset = Camera.objects.all()
     serializer_class = CameraSerializer
-
-    def get_queryset(self):
+    
+    def get_queryset(self, request):
+         
         return Camera.objects.all()
-
+    
+    @swagger_auto_schema(manual_parameters=[
+        openapi.Parameter('groups', openapi.IN_QUERY, description="Insert cameras into group", type=openapi.TYPE_ARRAY, items=openapi.Items(type=openapi.TYPE_INTEGER)),
+    ])
+    def list(self, request):
+        queryset = Camera.objects.all()
+        groups = self.request.query_params.get('groups', None)
+        if groups is not None:
+            groups = groups.split(',')
+            queryset_filter = CameraToGroup.objects.filter(group_id__in=groups)
+            queryset = queryset.filter(pk__in=queryset_filter.values('camera_id'))
+        serializer = CameraSerializer(queryset, many=True)
+        return Response(serializer.data)
+    
 class ClusterUnitViewSet(viewsets.ModelViewSet):
     queryset = ClusterUnit.objects.all()
     serializer_class = ClusterUnitSerializer
