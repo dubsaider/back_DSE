@@ -229,7 +229,6 @@ class ProcessingViewSet(viewsets.ModelViewSet):
 
     def create(self, request):
         body = request.data
-
         events = body['msg']['events']
         process_events = []
         for event in events:
@@ -255,14 +254,17 @@ class ProcessingViewSet(viewsets.ModelViewSet):
             camera=Camera.objects.filter(camera_ip=body['msg']['parameters']['ip']).first(),
         )
 
+        process.result_url = f'10.61.36.17/stream_{process.id}'
+        body['msg']['events'][0]['parameters']['path_server_stream'] = f'stream_{process.id}'
+
         process.process_events.set(process_events)
 
         producer = KafkaProducer(
             bootstrap_servers=['10.61.36.15:9092', '10.61.36.15:9093','10.61.36.15:9094'],
-            value_serializer=lambda v: json.dumps(v).encode('utf-8')
+            value_serializer=lambda v: v.encode('utf-8')
         )
 
-        producer.send('cv_cons', body)
+        producer.send('cv_cons', json.dumps(body))
         producer.flush()
 
         return Response({"status": "Success"})

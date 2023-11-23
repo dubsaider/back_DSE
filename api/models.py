@@ -90,6 +90,7 @@ class Process(models.Model):
 	cv_module = models.ForeignKey(ComputerVisionModule, on_delete=models.CASCADE)
 	camera = models.ForeignKey(Camera, on_delete=models.CASCADE)
 	process_events = models.ManyToManyField(ProcessEvent)
+	result_url = models.URLField(null=True, default=None)
 
 
 class GroupType(models.Model):

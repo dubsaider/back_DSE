@@ -34,7 +34,6 @@ router.register('locations', LocationViewSet, basename='locations-viewset')
 router.register('group-type', GroupTypeViewSet ,basename='group-type-viewset')
 router.register('camera-group', CameraGroupViewSet ,basename='camera-group-viewset')
 router.register('camera-to-group', CameraToGroupViewSet ,basename='camera-to-group-viewset')
-router.register('processing', ProcessingViewSet, basename='processing-viewset')
 
 urlpatterns = [
     path('viewsets/', include(router.urls)),
