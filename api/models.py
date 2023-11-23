@@ -13,6 +13,9 @@ class Camera(models.Model):
 	input_location = models.ForeignKey(Location, on_delete=models.CASCADE, related_name='imput_location')
 	output_location = models.ForeignKey(Location, on_delete=models.CASCADE, null=True, related_name='output_location')
 	camera_description = models.CharField(max_length=255, null=True, default='null')
+	camera_lat = models.FloatField(default=0.0)
+	camera_lon = models.FloatField(default=0.0)
+
 
 	def __str__(self):
 		return self.camera_name
