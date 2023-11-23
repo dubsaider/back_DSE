@@ -20,7 +20,7 @@ from .models import (
 
 @admin.register(Camera)
 class CameraAdmin(admin.ModelAdmin):
-    list_display = ('id', 'camera_name', 'camera_ip', 'camera_description', 'input_location', 'output_location')
+    list_display = ('id', 'camera_name', 'camera_ip', 'camera_description', 'input_location', 'output_location', 'camera_lon', 'camera_lat')
 
 @admin.register(ClusterUnit)
 class ClusterUnitAdmin(admin.ModelAdmin):
