@@ -89,15 +89,6 @@ class Process(models.Model):
 	process_events = models.ManyToManyField(ProcessEvent)
 
 
-# class ProcessEventToAction(models.Model):
-# 	process_event = models.ForeignKey(ProcessEvent, on_delete=models.CASCADE)
-# 	action = models.ForeignKey(Action, on_delete=models.CASCADE)
-
-
-# class ProcessToProcessEvent(models.Model):
-# 	process = models.ForeignKey(Process, on_delete=models.CASCADE)
-# 	process_event = models.ForeignKey(ProcessEvent, on_delete=models.CASCADE)
-
 class GroupType(models.Model):
 	type_name = models.CharField(max_length=255)
 	
