@@ -28,3 +28,8 @@ dist/
 
 # Ignore PyCharm / IntelliJ files
 .idea/
+
+vid/
+.vid/
+
+cameras/
