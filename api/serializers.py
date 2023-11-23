@@ -22,7 +22,7 @@ from .models import (
 class CameraSerializer(serializers.ModelSerializer):
     class Meta:
         model = Camera
-        fields = '__all__'
+        fields = ('camera_name', 'camera_ip', 'input_location', 'output_location', 'camera_description')
 
 class ClusterUnitSerializer(serializers.ModelSerializer):
     class Meta:
@@ -105,12 +105,20 @@ class ProcessSerializer(serializers.ModelSerializer):
 class GroupTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = GroupType
-        fields = '__all__'
+        fields = ('type_name',)
 
 class CameraGroupSerializer(serializers.ModelSerializer):
+    group_type = GroupTypeSerializer()
+    cameras = serializers.SerializerMethodField()
+
+    def get_cameras(self, obj):
+        camera_to_group = CameraToGroup.objects.filter(group_id=obj)
+        cameras = [camera.camera_id for camera in camera_to_group]
+        return CameraSerializer(cameras, many=True).data
+
     class Meta:
         model = CameraGroup
-        fields = '__all__'
+        fields = ('group_name', 'group_type', 'cameras')
 
 class CameraToGroupSerializer(serializers.ModelSerializer):
     class Meta:

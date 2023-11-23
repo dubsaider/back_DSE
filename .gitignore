@@ -1,6 +1,8 @@
 # Ignore virtual environments
 env/
 .env/
+venv/
+.venv/
 
 # Ignore Python byte code cache
 *.pyc

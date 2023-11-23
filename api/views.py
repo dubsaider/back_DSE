@@ -74,18 +74,16 @@ class DetectedObjectTypeViewSet(viewsets.ModelViewSet):
     serializer_class = DetectedObjectTypeSerializer
 
 class CameraViewSet(viewsets.ModelViewSet):
-    # quaryset = Camera.objects.all()
     serializer_class = CameraSerializer
     
-    def get_queryset(self, request):
-         
+    def get_queryset(self):
         return Camera.objects.all()
     
     @swagger_auto_schema(manual_parameters=[
         openapi.Parameter('groups', openapi.IN_QUERY, description="Insert cameras into group", type=openapi.TYPE_ARRAY, items=openapi.Items(type=openapi.TYPE_INTEGER)),
     ])
     def list(self, request):
-        queryset = Camera.objects.all()
+        queryset = self.get_queryset()
         groups = self.request.query_params.get('groups', None)
         if groups is not None:
             groups = groups.split(',')
@@ -98,10 +96,6 @@ class ClusterUnitViewSet(viewsets.ModelViewSet):
     queryset = ClusterUnit.objects.all()
     serializer_class = ClusterUnitSerializer
 
-class ProcessingViewSet(viewsets.ModelViewSet):
-    queryset = Process.objects.all()
-    serializer_class = ProcessSerializer
-
 class LocationViewSet(viewsets.ModelViewSet):
     queryset = Location.objects.all()
     serializer_class = LocationSerializer
@@ -113,6 +107,11 @@ class GroupTypeViewSet(viewsets.ModelViewSet):
 class CameraGroupViewSet(viewsets.ModelViewSet):
     queryset = CameraGroup.objects.all()
     serializer_class = CameraGroupSerializer
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
     @swagger_auto_schema(manual_parameters=[
         openapi.Parameter('group_name', openapi.IN_QUERY, description="Insert cameras into group", type=openapi.TYPE_STRING),
@@ -257,17 +256,6 @@ class ProcessingViewSet(viewsets.ModelViewSet):
         process.process_events.set(process_events)
 
         return Response({"status": "Success"})
-
-
-def video_hls_view(request, filename):
-    video_path = '/home/ubuntuser/back_DSE/vid/L.mp4'
-
-    hls_output_dir = os.path.join(os.path.dirname(video_path), 'test')
-    playlist_path = os.path.join(hls_output_dir, filename)
-
-    with open(playlist_path, 'rb') as playlist_file:
-        response = HttpResponse(playlist_file.read(), content_type='application/vnd.apple.mpegurl')
-        return response
 
 
 ACTIVE_STREAMS = {}
