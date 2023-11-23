@@ -47,6 +47,7 @@ from .serializers import (
     )
 import json
 from rest_framework.decorators import api_view
+from kafka import KafkaProducer
 
 
 class EventTypeViewSet(viewsets.ModelViewSet):
@@ -228,6 +229,7 @@ class ProcessingViewSet(viewsets.ModelViewSet):
 
     def create(self, request):
         body = request.data
+
         events = body['msg']['events']
         process_events = []
         for event in events:
@@ -254,6 +256,14 @@ class ProcessingViewSet(viewsets.ModelViewSet):
         )
 
         process.process_events.set(process_events)
+
+        producer = KafkaProducer(
+            bootstrap_servers=['10.61.36.15:9092', '10.61.36.15:9093','10.61.36.15:9094'],
+            value_serializer=lambda v: json.dumps(v).encode('utf-8')
+        )
+
+        producer.send('cv_cons', body)
+        producer.flush()
 
         return Response({"status": "Success"})
 
