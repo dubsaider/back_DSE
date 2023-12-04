@@ -6,4 +6,3 @@ python-ffmpeg-video-streaming==0.1.15
 pytz==2023.3
 sqlparse==0.4.4
 typing_extensions==4.7.1
-gunicorn==21.2.0
