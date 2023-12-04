@@ -3,6 +3,8 @@ FROM python:3.11.6-alpine
 ENV PYTHONUNBUFFERED 1
 ENV PYTHONDONTWRITEBYTECODE 1
 
+ENV SERVER_IP="10.61.36.15"
+
 WORKDIR /app
 
 COPY  . /app
@@ -14,6 +16,6 @@ EXPOSE 8000
 
 CMD ["python3 manage.py makemigrations \
       && python3 manage.py migrate \
-      && python3 manage.py runserver 10.61.36.15:8000"]
+      && python3 manage.py runserver ${SERVER_IP}:8000"]
 
 # backend-dse:dev
