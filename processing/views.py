@@ -30,11 +30,15 @@ class ProcessEventViewSet(viewsets.ModelViewSet):
     queryset = ProcessEvent.objects.all()
     serializer_class = ProcessEventSerializer
 
-class ProcessingViewSet(viewsets.ViewSet):
+class ProcessingViewSet(viewsets.ModelViewSet):
+    queryset = Process.objects.all()
+    serializer_class = ProcessSerializer
+
     def create(self, request):
         data = request.data
 
         model_name = data['cvmode']
+        # TODO Не нужно создавать новый model
         model = Model.objects.create(model_name=model_name)
 
         cv_modules_name = data['cvmode']
@@ -52,7 +56,7 @@ class ProcessingViewSet(viewsets.ViewSet):
             logging = event['event_actions'].count('logging') > 0
             box_drawing = event['event_actions'].count('box_drawing') > 0
             FPS_check = None
-            process_event = ProcessEvent.objects.create(fps=fps, line_count=line_count, zone_check=zone_check, host_rtp=host_rtp, port_rtp=port_rtp, size_buff=size_buff, logging=logging, box_drawing=box_drawing, FPS_check=FPS_check)
+            process_event = ProcessEvent.objects.create(event_type=event_type, fps=fps, line_count=line_count, zone_check=zone_check, host_rtp=host_rtp, port_rtp=port_rtp, size_buff=size_buff, logging=logging, box_drawing=box_drawing, FPS_check=FPS_check)
 
         camera_id = data['camera_id']
         result_url = None

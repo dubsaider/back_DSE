@@ -12,7 +12,7 @@ class ComputerVisionModuleAdmin(admin.ModelAdmin):
 
 @admin.register(ProcessEvent)
 class ProcessEventAdmin(admin.ModelAdmin):
-    list_display = ('fps', 'line_count', 'zone_check', 'host_rtp', 'port_rtp', 'size_buff')
+    list_display = ('event_type', 'fps', 'line_count', 'zone_check', 'host_rtp', 'port_rtp', 'size_buff', 'logging', 'box_drawing', 'FPS_check')
 
 @admin.register(Process)
 class ProcessAdmin(admin.ModelAdmin):

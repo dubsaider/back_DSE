@@ -17,6 +17,7 @@ class ComputerVisionModule(models.Model):
 
 
 class ProcessEvent(models.Model):
+	event_type = models.CharField(max_length=100, blank=True, null=True)
 	fps = models.IntegerField(blank=True, null=True)
 	line_count = models.JSONField(blank=True, null=True)
 	zone_check = models.JSONField(blank=True, null=True)
@@ -26,9 +27,9 @@ class ProcessEvent(models.Model):
 	logging = models.BooleanField(blank=True, null=True)
 	box_drawing = models.BooleanField(blank=True, null=True)
 	FPS_check = models.BooleanField(blank=True, null=True)
-	
+    
     # def __str__(self):
-	# 	fields = []
+    #     fields = []
     #     if self.fps is not None:
     #         fields.append(f"fps=self.fps")
     #     if self.line_count is not None:
