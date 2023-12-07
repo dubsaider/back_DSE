@@ -16,7 +16,6 @@ class Camera(models.Model):
 	camera_lat = models.FloatField(default=0.0)
 	camera_lon = models.FloatField(default=0.0)
 
-
 	def __str__(self):
 		return self.camera_name
 	

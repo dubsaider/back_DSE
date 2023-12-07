@@ -1,8 +1,7 @@
 from rest_framework import serializers
 from .models import (
     Model, 
-    ComputerVisionModule, 
-    ProcessAction, 
+    ComputerVisionModule,
     ProcessEvent, 
     Process
 )
@@ -19,22 +18,24 @@ class ComputerVisionModuleSerializer(serializers.ModelSerializer):
         model = ComputerVisionModule
         fields = '__all__'
 
-class ProcessActionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ProcessAction
-        fields = '__all__'
-
 class ProcessEventSerializer(serializers.ModelSerializer):
-    actions = ProcessActionSerializer(many=True)
-
     class Meta:
         model = ProcessEvent
         fields = '__all__'
 
+# class ProcessSerializer(serializers.ModelSerializer):
+#     cv_module_id = ComputerVisionModuleSerializer()
+#     process_events = ProcessEventSerializer(many=True)
+
+#     class Meta:
+#         model = Process
+#         fields = '__all__'
+
 class ProcessSerializer(serializers.ModelSerializer):
-    cv_module_id = ComputerVisionModuleSerializer()
-    process_events = ProcessEventSerializer(many=True)
+    cv_module_id = serializers.StringRelatedField()
+    camera_id = serializers.StringRelatedField()
+    process_events = serializers.StringRelatedField(many=True)
 
     class Meta:
         model = Process
-        fields = '__all__'
+        fields = ['id', 'cv_module_id', 'camera_id', 'process_events', 'result_url']
