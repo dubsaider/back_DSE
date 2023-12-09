@@ -44,12 +44,15 @@ class ProcessSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         events = validated_data.pop('events')
+        # TODO fix stream url
+        validated_data['result_url'] = 'url'
         process = Process.objects.create(**validated_data)
 
         for event in events:
-            # ProcessEvent.objects.create(process=process, **event)
-            process.events_set.set([events])
+            ProcessEvent.objects.create(process=process, **event)
         
+        # TODO send message to Kafka topic
+
         return process
 
     class Meta:
