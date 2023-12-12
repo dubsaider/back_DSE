@@ -21,3 +21,8 @@ class ProcessEventAdmin(admin.ModelAdmin):
 @admin.register(Process)
 class ProcessAdmin(admin.ModelAdmin):
     list_display = ('cv_module_id', 'camera_id', 'result_url')
+    
+    def save_model(self, request, obj, form, change):
+        obj.result_url = f'http://10.61.36.15:8554/{obj.camera_id.id}/{obj.cv_module_id.id}'
+
+        super().save_model(request, obj, form, change)
