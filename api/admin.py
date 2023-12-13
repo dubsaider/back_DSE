@@ -1,9 +1,17 @@
 from django.contrib import admin
 from .models import (
     Camera,
+    ClusterUnit, 
+    Processing, 
     DetectedObjectType, 
     ObjectsDetectionLog, 
     Location,
+    EventType,
+    Action, 
+    Model, 
+    ComputerVisionModule, 
+    Event,
+    Process,
     GroupType,
     CameraGroup,
     CameraToGroup,
@@ -13,6 +21,23 @@ from .models import (
 @admin.register(Camera)
 class CameraAdmin(admin.ModelAdmin):
     list_display = ('id', 'camera_name', 'camera_ip', 'camera_description', 'input_location', 'output_location', 'camera_lon', 'camera_lat')
+
+@admin.register(ClusterUnit)
+class ClusterUnitAdmin(admin.ModelAdmin):
+    list_display = ('id', 'unit_name', 'unit_ip', 'unit_config')
+
+@admin.register(Processing)
+class ProcessingAdmin(admin.ModelAdmin):
+    list_display = ('id', 'view_camera_name', 'view_unit_name', 'processing_config')
+
+    def view_camera_name(self, obj):
+        return obj.camera.camera_name
+    
+    def view_unit_name(self, obj):
+        return obj.unit.unit_name
+
+    view_camera_name.short_description = 'camera'
+    view_unit_name.short_description = 'unit'
 
 @admin.register(DetectedObjectType)
 class DetectedObjectTypeAdmin(admin.ModelAdmin):
@@ -39,12 +64,22 @@ class LocationsAdmin(admin.ModelAdmin):
 
 admin.site.unregister(Camera)
 admin.site.register(Camera, CameraAdmin)
+admin.site.unregister(ClusterUnit)
+admin.site.register(ClusterUnit, ClusterUnitAdmin)
+admin.site.unregister(Processing)
+admin.site.register(Processing, ProcessingAdmin)
 admin.site.unregister(DetectedObjectType)
 admin.site.register(DetectedObjectType, DetectedObjectTypeAdmin)
 admin.site.unregister(ObjectsDetectionLog)
 admin.site.register(ObjectsDetectionLog, ObjectsDetectionLogsAdmin)
 admin.site.unregister(Location)
 admin.site.register(Location, LocationsAdmin)
+admin.site.register(EventType)
+admin.site.register(Action)
+admin.site.register(Model)
+admin.site.register(ComputerVisionModule)
+admin.site.register(Event)
+admin.site.register(Process)
 admin.site.register(GroupType)
 admin.site.register(CameraGroup)
 admin.site.register(CameraToGroup)
