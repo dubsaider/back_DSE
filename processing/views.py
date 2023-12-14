@@ -67,14 +67,18 @@ class ProcessingViewSet(viewsets.ModelViewSet):
         producer = KafkaProducer(bootstrap_servers=['10.61.36.15:9092', '10.61.36.15:9093', '10.61.36.15:9094'],
                                  value_serializer=lambda m: json.dumps(m).encode('utf-8')) 
         
+        cvmode = ComputerVisionModule.objects.filter(pk=data['cv_module_id']).first()
+        print(cvmode.cv_modules_name)
+        camera = Camera.objects.filter(pk=data['camera_id']).first()
+
         data = {
     "type": "create_process",
     "msg": {
       "parameters": {
-        "cvmode": "car",
+        "cvmode": f"{cvmode.cv_modules_name}",
         "channel": 1,
         "port": 554,
-        "ip": "10.40.16.36",
+        "ip": f"{camera.camera_ip}",
         "login": "admin",
         "password": "bvrn2022",
         "scene_number": 1

@@ -20,6 +20,6 @@ router.register('camera-group', CameraGroupViewSet ,basename='camera-group-views
 router.register('camera-to-group', CameraToGroupViewSet ,basename='camera-to-group-viewset')
 
 urlpatterns = [
-    path('viewsets/', include(router.urls)),
+    path('', include(router.urls)),
     path('camera/<int:pk>/<str:filename>', get_camera_view, name='get_camera'),
 ]
