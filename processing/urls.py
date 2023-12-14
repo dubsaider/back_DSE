@@ -14,6 +14,6 @@ router.register('process-event', ProcessEventViewSet, basename='process-event-vi
 router.register('processing', ProcessingViewSet ,basename='processing-viewset')
 
 urlpatterns = [
-    path('processing/', include(router.urls)),
+    path('', include(router.urls)),
     # path('gen/zA', generate_data, name='generate_data'),
 ]
