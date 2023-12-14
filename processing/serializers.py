@@ -6,7 +6,7 @@ from .models import (
     ProcessEvent, 
     Process
 )
-from api.serializers import CameraSerializer
+from camera_manager.serializers import CameraSerializer
 
 class ModelSerializer(serializers.ModelSerializer):
     class Meta:

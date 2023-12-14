@@ -1,5 +1,5 @@
 from django.db import models
-from api.models import Camera
+from camera_manager.models import Camera
 
 
 class Model(models.Model):

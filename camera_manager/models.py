@@ -14,6 +14,7 @@ class Camera(models.Model):
 	camera_description = models.CharField(max_length=255, null=True, default='null')
 	camera_lat = models.FloatField(default=0.0)
 	camera_lon = models.FloatField(default=0.0)
+	is_active = models.BooleanField(default=False, blank=True)
 
 	def __str__(self):
 		return self.camera_name
@@ -30,3 +31,7 @@ class CameraGroup(models.Model):
 	
 	def __str__(self):
 		return self.group_name
+	
+class CameraToGroup(models.Model):
+	group_id = models.ForeignKey(CameraGroup, on_delete=models.CASCADE)
+	camera_id = models.ForeignKey(Camera, on_delete=models.CASCADE)
