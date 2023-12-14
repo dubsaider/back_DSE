@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_swagger',
     'drf_yasg',
+    'camera_manager',
     'processing',
     'api',
     'rest_framework_simplejwt',

@@ -1,18 +1,10 @@
 from django.contrib import admin
 from .models import (
-    Camera,
     DetectedObjectType, 
-    ObjectsDetectionLog, 
-    Location,
-    GroupType,
-    CameraGroup,
-    CameraToGroup,
-    )
+    ObjectsDetectionLog,
+)
 
 
-@admin.register(Camera)
-class CameraAdmin(admin.ModelAdmin):
-    list_display = ('id', 'camera_name', 'camera_ip', 'camera_description', 'input_location', 'output_location', 'camera_lon', 'camera_lat')
 
 @admin.register(DetectedObjectType)
 class DetectedObjectTypeAdmin(admin.ModelAdmin):
@@ -31,20 +23,9 @@ class ObjectsDetectionLogsAdmin(admin.ModelAdmin):
     view_location_name.short_description = 'location'
     view_type_name.short_description = 'type'
 
-@admin.register(Location)
-class LocationsAdmin(admin.ModelAdmin):
-    list_display = ('id', 'location')
 
 
-
-admin.site.unregister(Camera)
-admin.site.register(Camera, CameraAdmin)
 admin.site.unregister(DetectedObjectType)
 admin.site.register(DetectedObjectType, DetectedObjectTypeAdmin)
 admin.site.unregister(ObjectsDetectionLog)
 admin.site.register(ObjectsDetectionLog, ObjectsDetectionLogsAdmin)
-admin.site.unregister(Location)
-admin.site.register(Location, LocationsAdmin)
-admin.site.register(GroupType)
-admin.site.register(CameraGroup)
-admin.site.register(CameraToGroup)
