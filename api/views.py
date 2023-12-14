@@ -28,6 +28,7 @@ from .serializers import (
     )
 from rest_framework.permissions import (
         IsAuthenticated,
+        IsAuthenticatedOrReadOnly
     )
 
 
@@ -58,7 +59,7 @@ class CameraViewSet(viewsets.ModelViewSet):
 class LocationViewSet(viewsets.ModelViewSet):
     queryset = Location.objects.all()
     serializer_class = LocationSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticatedOrReadOnly,)
 
 class GroupTypeViewSet(viewsets.ModelViewSet):
     queryset = GroupType.objects.all()
