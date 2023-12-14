@@ -41,7 +41,7 @@ class ProcessingViewSet(viewsets.ModelViewSet):
         process = Process.objects.create(
             cv_module_id_id=data['cv_module_id'],
             camera_id_id=data['camera_id'],
-            result_url='http://10.61.36.15:8554/' + data['camera_id'] + '/' + data['cv_module_id']
+            result_url='http://10.61.36.17:8554/' + data['camera_id'] + '/' + data['cv_module_id']
         )
 
         events_data = data['events']
@@ -63,5 +63,45 @@ class ProcessingViewSet(viewsets.ModelViewSet):
                 process_event.actions.add(process_action)
 
             process.events.add(process_event)
+
+        producer = KafkaProducer(bootstrap_servers=['10.61.36.15:9092', '10.61.36.15:9093', '10.61.36.15:9094'],
+                                 value_serializer=lambda m: json.dumps(m).encode('utf-8')) 
+        
+        data = {
+    "type": "create_process",
+    "msg": {
+      "parameters": {
+        "cvmode": "car",
+        "channel": 1,
+        "port": 554,
+        "ip": "10.40.16.36",
+        "login": "admin",
+        "password": "bvrn2022",
+        "scene_number": 1
+      },
+      "events": [
+        {
+            "event_name": "all_frames",
+            "event_actions": [
+              "box_drawing","line_count", "record", "rtsp_server_stream", "logging"
+            ],
+            "parameters": {
+              "lines": {
+                "line0": [[250, 275], [400, 350]]
+              },
+              "FPS": 30,
+              "timer": 600,
+              "host_port_rtsp_server": "10.61.36.17:8554",
+              "path_server_stream": f"{data['camera_id']}/{data['cv_module_id']}"
+            }
+          }
+      ]
+    }
+  }
+        json_data = json.dumps(data)
+
+        producer.send('cv_cons', json_data)
+
+        producer.flush()
 
         return Response({'message': 'Process created successfully'}, status=status.HTTP_201_CREATED)
