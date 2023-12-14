@@ -68,7 +68,6 @@ class ProcessingViewSet(viewsets.ModelViewSet):
                                  value_serializer=lambda m: json.dumps(m).encode('utf-8')) 
         
         cvmode = ComputerVisionModule.objects.filter(pk=data['cv_module_id']).first()
-        print(cvmode.cv_modules_name)
         camera = Camera.objects.filter(pk=data['camera_id']).first()
 
         data = {
