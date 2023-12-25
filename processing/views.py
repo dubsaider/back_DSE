@@ -37,13 +37,11 @@ class ProcessingViewSet(viewsets.ModelViewSet):
 
     def create(self, request):
         data = request.data
-
         process = Process.objects.create(
             cv_module_id_id=data['cv_module_id'],
             camera_id_id=data['camera_id'],
-            result_url='http://10.61.36.17:8554/' + data['camera_id'] + '/' + data['cv_module_id']
+            result_url='http://10.61.36.17:8888/processing_' + data['camera_id'] + '/' + data['cv_module_id']
         )
-
         events_data = data['events']
         for event_data in events_data:
             event_type = event_data['event_type']
@@ -63,44 +61,41 @@ class ProcessingViewSet(viewsets.ModelViewSet):
                 process_event.actions.add(process_action)
 
             process.events.add(process_event)
-
         producer = KafkaProducer(bootstrap_servers=['10.61.36.15:9092', '10.61.36.15:9093', '10.61.36.15:9094'],
                                  value_serializer=lambda m: json.dumps(m).encode('utf-8')) 
         
         cvmode = ComputerVisionModule.objects.filter(pk=data['cv_module_id']).first()
         camera = Camera.objects.filter(pk=data['camera_id']).first()
-
+        print(cvmode, camera)
         data = {
-    "type": "create_process",
-    "msg": {
-      "parameters": {
-        "cvmode": f"{cvmode.cv_modules_name}",
-        "channel": 1,
-        "port": 554,
-        "ip": f"{camera.camera_ip}",
-        "login": "admin",
-        "password": "bvrn2022",
-        "scene_number": 1
-      },
-      "events": [
-        {
-            "event_name": "all_frames",
-            "event_actions": [
-              "box_drawing","line_count", "record", "rtsp_server_stream", "logging"
-            ],
+          "type": "create_process",
+          "msg": {
             "parameters": {
-              "lines": {
-                "line0": [[250, 275], [400, 350]]
-              },
-              "FPS": 30,
-              "timer": 600,
-              "host_port_rtsp_server": "10.61.36.17:8554",
-              "path_server_stream": f"{data['camera_id']}/{data['cv_module_id']}"
-            }
+              "cvmode": f"{cvmode.cv_modules_name}",
+              "channel": 1,
+              "port": 554,
+              "ip": f"{camera.camera_ip}",
+              "login": "admin",
+              "password": "bvrn2022",
+              "scene_number": 1
+            },
+            "events": [
+              {
+                  "event_name": "all_frames",
+                  "event_actions": [
+                    "box_drawing", "record", "rtsp_server_stream", "logging"
+                  ],
+                  "parameters": {
+                    "FPS": 30,
+                    "timer": 600,
+                    "host_port_rtsp_server": "10.61.36.17:8554",
+                    "path_server_stream": f"processing_{data['camera_id']}/{data['cv_module_id']}"
+                  }
+                }
+            ]
           }
-      ]
-    }
-  }
+        }
+
         json_data = json.dumps(data)
 
         producer.send('cv_cons', json_data)
