@@ -1,4 +1,5 @@
 from django.db import models
+import hashlib
 
 class Location(models.Model):
 	location = models.CharField(max_length=255)
@@ -15,9 +16,18 @@ class Camera(models.Model):
 	camera_lat = models.FloatField(default=0.0)
 	camera_lon = models.FloatField(default=0.0)
 	is_active = models.BooleanField(default=False, blank=True)
+	# camera_login = models.CharField(max_length=255, null=False, default='admin')
+	# camera_password = models.CharField(max_length=255, null=False)
 
 	def __str__(self):
 		return self.camera_name
+	
+	# def set_password(self, password):
+	# 	self.camera_password = self.hash_password(password)
+
+	# @staticmethod
+	# def hash_password(password):
+	# 	return hashlib.sha256(password.encode()).hexdigest()
 	
 class GroupType(models.Model):
 	type_name = models.CharField(max_length=255)

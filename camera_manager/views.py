@@ -2,6 +2,7 @@ from django.shortcuts import render
 import os
 from pathlib import Path
 import ffmpeg_streaming
+from onvif import ONVIFCamera
 from django.http import HttpResponse, HttpResponseNotFound
 from rest_framework import viewsets
 from rest_framework.response import Response
@@ -117,7 +118,6 @@ def get_camera_view(request, pk, filename):
     if not Camera.objects.filter(pk=pk).exists():
         return HttpResponseNotFound()
     
-
     camera_ip = Camera.objects.filter(pk=pk).first().camera_ip
     hls_output_dir = os.path.join(Path(__file__).resolve().parent.parent, 'cameras')
     hls_output_dir = os.path.join(hls_output_dir, f'camera_{pk}')
@@ -133,3 +133,93 @@ def get_camera_view(request, pk, filename):
     with open(playlist_path, 'rb') as playlist_file:
         response = HttpResponse(playlist_file.read(), content_type='application/vnd.apple.mpegurl')
         return response
+
+
+def prepeare_camera(mycam):
+    # ptz service
+    ptz = mycam.create_ptz_service()
+
+    # media service
+    media = mycam.create_media_service()
+
+    # Get target profile
+    media_profile = media.GetProfiles()[0]
+
+    # Get ptz config
+    request = ptz.create_type('GetConfigurationOptions')
+    request.ConfigurationToken = media_profile.PTZConfiguration.token
+    ptz_configuration_options = ptz.GetConfigurationOptions(request)
+
+    moverequest = ptz.create_type('RelativeMove')
+    moverequest.ProfileToken = media_profile.token
+    if moverequest.Translation is None:
+        moverequest.Translation = ptz.GetStatus(
+            {'ProfileToken': media_profile.token}).Position
+        moverequest.Translation.PanTilt.space = ptz_configuration_options.Spaces.RelativePanTiltTranslationSpace[0].URI
+        moverequest.Translation.Zoom.space = ptz_configuration_options.Spaces.RelativeZoomTranslationSpace[0].URI
+        if moverequest.Speed is None:
+            moverequest.Speed = ptz.GetStatus(
+                {'ProfileToken': media_profile.token}).Position
+    return moverequest
+            
+
+class HikvisionCameraZoomViewSet(viewsets.ViewSet):
+    @swagger_auto_schema(manual_parameters=[
+        openapi.Parameter('camera_id', openapi.IN_QUERY, description="id of controlled camera", type=openapi.TYPE_INTEGER),
+        openapi.Parameter('zoom_in', openapi.IN_QUERY, description="if True - camera will zoom in. It will zoom out otherwise", type=openapi.TYPE_BOOLEAN),
+    ])
+
+    def create(self, request):
+        camera_id = request.query_params['camera_id']
+        zoom_in = request.query_params['zoom_in']
+
+        camera = Camera.objects.get(id=camera_id)
+    
+        # Connect to the camera using the ONVIF library
+        mycam = ONVIFCamera(camera.camera_ip, 80, 'admin', 'bvrn2022')
+        moverequest = prepeare_camera(mycam=mycam)
+        
+        moverequest.Translation.PanTilt.x = 0
+        moverequest.Translation.PanTilt.y = 0
+        moverequest.Translation.Zoom = 0
+        if zoom_in:
+            moverequest.Translation.Zoom = 0.003
+        else:
+            moverequest.Translation.Zoom = -0.003
+        
+         # Adjust the y value as needed
+        mycam.ptz.RelativeMove(moverequest)
+        return Response({'message': 'Camera zoomed in'})
+
+class HikvisionCameraPositionViewSet(viewsets.ViewSet):
+    @swagger_auto_schema(manual_parameters=[
+        openapi.Parameter('camera_id', openapi.IN_QUERY, description="id of controlled camera", type=openapi.TYPE_INTEGER),
+        openapi.Parameter('direction', openapi.IN_QUERY, description="LEFT, RIGHT, UP, DOWN", type=openapi.TYPE_STRING),
+    ])
+
+    def create(self, request):
+        camera_id = request.query_params['camera_id']
+        direction = request.query_params['direction']
+        mycam = Camera.objects.get(id=camera_id)
+    
+        # Connect to the camera using the ONVIF library
+        mycam = ONVIFCamera(mycam.camera_ip, 80, 'admin', 'bvrn2022')
+
+        moverequest = prepeare_camera(mycam=mycam)
+
+        moverequest.Translation.Zoom = 0
+        moverequest.Translation.PanTilt.x = 0
+        moverequest.Translation.PanTilt.y = 0
+        if direction == "RIGHT":
+            moverequest.Translation.PanTilt.x = 0.003
+        elif direction == "LEFT":
+            moverequest.Translation.PanTilt.x = -0.003
+        elif direction == "UP":
+            moverequest.Translation.PanTilt.y = 0.003
+        elif direction == "DOWN":
+            moverequest.Translation.PanTilt.y = -0.003
+        
+         # Adjust the y value as needed
+        mycam.ptz.RelativeMove(moverequest)
+
+        return Response({'message': 'Camera moved'})
