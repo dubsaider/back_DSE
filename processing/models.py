@@ -15,31 +15,30 @@ class ComputerVisionModule(models.Model):
 	def __str__(self):
 	    return self.cv_modules_name
 
+class ActionType(models.Model):
+  name = models.CharField(max_length=255)
+  description = models.CharField(max_length=255, null=True, default=None)
+
+  def __str__(self):
+      return self.name
+
 class ProcessAction(models.Model):
-    ACTION_TYPE_CHOICES = (
-        ('record', 'Record'),
-        ('logging', 'Logging'),
-        ('line_count', 'Line Count'),
-        ('zone_check', 'Zone Check'),
-        ('rtp_stream', 'RTP Stream'),
-        ('box_drawing', 'Box Drawing'),
-        ('buffer_stream', 'Stream Buffer'),
-		('rtsp_server_stream', 'RTSP Stream Server'),
-        ('FPS_check', 'FPS Check'),
-    )
-    action_type = models.CharField(choices=ACTION_TYPE_CHOICES)
+    action_type = models.ForeignKey(ActionType, on_delete=models.CASCADE)
     parameters = models.JSONField(null=True, default=None)
 	
     def __str__(self):
         return f'{self.action_type} {self.parameters}'
 
+class EventType(models.Model):
+    name = models.CharField(max_length=255)
+    description = models.CharField(max_length=255, null=True, default=None)
+    
+    def __str__(self):
+        return self.name
+
+
 class ProcessEvent(models.Model):
-	EVENT_TYPE_CHOICES = (
-        ('all_frames', 'All frames'),
-        ('check_any_object', 'Check any object'),
-        ('check_any_object_few_minutes', 'Check any object few minutes'),
-    )
-	event_type = models.CharField(choices=EVENT_TYPE_CHOICES, null=False)
+	event_type = models.ForeignKey(EventType, on_delete=models.CASCADE)
 	actions = models.ManyToManyField(ProcessAction)
 
 	def __str__(self):

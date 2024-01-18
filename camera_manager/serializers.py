@@ -11,7 +11,7 @@ from .models import (
 class CameraSerializer(serializers.ModelSerializer):
     class Meta:
         model = Camera
-        fields = ('id', 'camera_name', 'camera_ip', 'input_location', 'output_location', 'camera_description', 'camera_lon', 'camera_lat')
+        fields = ('id', 'camera_name', 'camera_ip', 'input_location', 'output_location', 'camera_description', 'camera_lon', 'camera_lat', 'is_active')
 
 class LocationSerializer(serializers.ModelSerializer):
      class Meta:

@@ -2,6 +2,8 @@ from rest_framework import serializers
 from .models import (
     Model, 
     ComputerVisionModule,
+    ActionType,
+    EventType,
     ProcessAction,
     ProcessEvent, 
     Process
@@ -16,6 +18,16 @@ class ModelSerializer(serializers.ModelSerializer):
 class ComputerVisionModuleSerializer(serializers.ModelSerializer):
     class Meta:
         model = ComputerVisionModule
+        fields = '__all__'
+
+class ActionTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ActionType
+        fields = '__all__'
+
+class EventTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EventType
         fields = '__all__'
 
 class ProcessActionSerializer(serializers.ModelSerializer):

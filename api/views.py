@@ -22,9 +22,11 @@ from rest_framework.permissions import (
 class DetectedObjectTypeViewSet(viewsets.ModelViewSet):
     queryset = DetectedObjectType.objects.all()
     serializer_class = DetectedObjectTypeSerializer
+    http_method_names = ['get']
 
 class ObjectsDetectionLogViewSet(viewsets.ViewSet):
     serializer_class = ObjectsDetectionLogSerializer
+    http_method_names = ['get']
 
     @swagger_auto_schema(manual_parameters=[
         openapi.Parameter('start_datestamp', openapi.IN_QUERY, description="Start datestamp", type=openapi.TYPE_STRING),

@@ -1,9 +1,11 @@
 from django.contrib import admin
-from .models import Model, ComputerVisionModule, ProcessAction, ProcessEvent, Process
+from .models import Model, ComputerVisionModule, ProcessAction, ProcessEvent, Process, ActionType, EventType
 from camera_manager.models import Camera
 from kafka import KafkaProducer
 import json
 
+admin.site.register(ActionType)
+admin.site.register(EventType)
 
 @admin.register(Model)
 class ModelAdmin(admin.ModelAdmin):

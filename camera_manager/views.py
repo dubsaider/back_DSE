@@ -8,6 +8,7 @@ from rest_framework import viewsets
 from rest_framework.response import Response
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
+import cv2
 from .models import (
             Camera, 
             Location,
@@ -50,14 +51,17 @@ class LocationViewSet(viewsets.ModelViewSet):
     queryset = Location.objects.all()
     serializer_class = LocationSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,)
+    http_method_names = ['get']
 
 class GroupTypeViewSet(viewsets.ModelViewSet):
     queryset = GroupType.objects.all()
     serializer_class = GroupTypeSerializer
+    http_method_names = ['get']
 
 class CameraGroupViewSet(viewsets.ModelViewSet):
     queryset = CameraGroup.objects.all()
     serializer_class = CameraGroupSerializer
+    http_method_names = ['get']
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
@@ -223,3 +227,39 @@ class HikvisionCameraPositionViewSet(viewsets.ViewSet):
         mycam.ptz.RelativeMove(moverequest)
 
         return Response({'message': 'Camera moved'})
+    
+# class HikvisionCameraStreamViewSet(viewsets.ViewSet):
+#     def retrieve(self, request, pk=None):
+#         camera_id = pk
+#         camera = Camera.objects.get(id=camera_id)
+
+#         # Connect to the camera using the ONVIF library
+#         mycam = ONVIFCamera(camera.camera_ip, 80, 'admin', 'bvrn2022')
+
+#         # Get the media service
+#         media = mycam.create_media_service()
+
+#         # Get the target profile
+#         profiles = media.GetProfiles()
+#         profile_token = profiles[0].token
+
+#         # Get the video stream URI
+#         stream_uri = media.GetStreamUri({'StreamSetup': {'Stream': 'RTP-Unicast', 'Transport': {'Protocol': 'RTSP'}}}, profile_token)
+
+#         # Open the video stream
+#         cap = cv2.VideoCapture(stream_uri.Uri)
+
+#         def generate_frames():
+#             while True:
+#                 ret, frame = cap.read()
+#                 if not ret:
+#                     break
+
+#                 ret, buffer = cv2.imencode('.jpg', frame)
+#                 if not ret:
+#                     break
+
+#                 yield (b'--frame\r\n'
+#                        b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
+
+#         return StreamingHttpResponse(generate_frames(), content_type='multipart/x-mixed-replace; boundary=frame')

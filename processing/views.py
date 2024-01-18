@@ -6,6 +6,8 @@ from kafka import KafkaProducer
 import json
 from .models import (
     Camera,
+    ActionType,
+    EventType,
     ProcessAction,
     ProcessEvent,
     Model,
@@ -16,16 +18,30 @@ from .serializers import (
     ModelSerializer, 
     ComputerVisionModuleSerializer, 
     ProcessEventSerializer, 
-    ProcessSerializer
+    ProcessSerializer,
+    EventTypeSerializer,
+    ActionTypeSerializer,
 )
+
+class ActionTypeViewSet(viewsets.ModelViewSet):
+    queryset = ActionType.objects.all()
+    serializer_class = ActionTypeSerializer
+    http_method_names = ['get']
+
+class EventTypeViewSet(viewsets.ModelViewSet):
+    queryset = EventType.objects.all()
+    serializer_class = EventTypeSerializer
+    http_method_names = ['get']
 
 class ModelViewSet(viewsets.ModelViewSet):
     queryset = Model.objects.all()
     serializer_class = ModelSerializer
+    http_method_names = ['get']
 
 class ComputerVisionModuleViewSet(viewsets.ModelViewSet):
     queryset = ComputerVisionModule.objects.all()
     serializer_class = ComputerVisionModuleSerializer
+    http_method_names = ['get']
 
 class ProcessEventViewSet(viewsets.ModelViewSet):
     queryset = ProcessEvent.objects.all()

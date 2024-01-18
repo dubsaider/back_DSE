@@ -5,6 +5,8 @@ from .views import (
     ComputerVisionModuleViewSet,
     ProcessEventViewSet,
     ProcessingViewSet,
+    EventTypeViewSet,
+    ActionTypeViewSet,
 )
 
 router = routers.DefaultRouter()
