@@ -18,7 +18,7 @@ class ModelSerializer(serializers.ModelSerializer):
 class ComputerVisionModuleSerializer(serializers.ModelSerializer):
     class Meta:
         model = ComputerVisionModule
-        fields = '__all__'
+        fields = ['id', 'cv_modules_name', 'cv_modules_description', 'model_type']
 
 class ActionTypeSerializer(serializers.ModelSerializer):
     class Meta:
@@ -44,6 +44,8 @@ class ProcessEventSerializer(serializers.ModelSerializer):
 
 class ProcessSerializer(serializers.ModelSerializer):
     events = ProcessEventSerializer(many=True)
+    cv_module_id = ComputerVisionModuleSerializer()
+    camera_id = CameraSerializer()
 
     class Meta:
         model = Process

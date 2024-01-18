@@ -2,6 +2,8 @@ from rest_framework import serializers
 from .models import (
     DetectedObjectType, 
     ObjectsDetectionLog,
+    Incident,
+    ZoneStats,
 )
 
 
@@ -17,3 +19,14 @@ class DetectedObjectTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = DetectedObjectType
         fields = '__all__'
+
+class IncidentSerializer(serializers.ModelSerializer):
+   class Meta:
+       model = Incident
+       fields = ['timestamp', 'camera', 'event', 'incident', 'link']
+
+class ZoneStatsSerializer(serializers.ModelSerializer):
+   class Meta:
+       model = ZoneStats
+       fields = ['timestamp', 'camera', 'location', 'change']
+

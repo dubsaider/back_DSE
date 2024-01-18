@@ -13,7 +13,9 @@ router = routers.DefaultRouter()
 router.register('model', ModelViewSet, basename='model-viewset')
 router.register('computer-vision-modules', ComputerVisionModuleViewSet, basename='computer-vision-modules-viewset')
 router.register('process-event', ProcessEventViewSet, basename='process-event-viewset')
-router.register('processing', ProcessingViewSet ,basename='processing-viewset')
+router.register('processing', ProcessingViewSet, basename='processing-viewset')
+router.register('event-type', EventTypeViewSet, basename='event-type-viewset')
+router.register('action-type', ActionTypeViewSet, basename='action-type-viewset')
 
 urlpatterns = [
     path('', include(router.urls)),

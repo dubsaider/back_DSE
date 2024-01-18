@@ -7,16 +7,30 @@ from datetime import datetime
 from .models import (
             DetectedObjectType,
             ObjectsDetectionLog,
+            Incident,
+            ZoneStats,
         )
 from .serializers import (
         ObjectsDetectionLogSerializer,
         DetectedObjectTypeSerializer,
+        IncidentSerializer,
+        ZoneStatsSerializer,
     )
 from rest_framework.permissions import (
         IsAuthenticated,
         IsAuthenticatedOrReadOnly
     )
 
+class IncidentViewSet(viewsets.ModelViewSet):
+    queryset = Incident.objects.all()
+    serializer_class = IncidentSerializer
+    http_method_names = ['get']
+
+
+class ZoneStatsViewSet(viewsets.ModelViewSet):
+    queryset = ZoneStats.objects.all()
+    serializer_class = ZoneStatsSerializer
+    http_method_names = ['get']
 
 
 class DetectedObjectTypeViewSet(viewsets.ModelViewSet):
