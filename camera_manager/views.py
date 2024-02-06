@@ -30,6 +30,7 @@ from rest_framework.permissions import (
 
 class CameraViewSet(viewsets.ModelViewSet):
     serializer_class = CameraSerializer
+    permission_classes = (IsAuthenticatedOrReadOnly,)
     
     def get_queryset(self):
         return Camera.objects.all()
@@ -56,11 +57,13 @@ class LocationViewSet(viewsets.ModelViewSet):
 class GroupTypeViewSet(viewsets.ModelViewSet):
     queryset = GroupType.objects.all()
     serializer_class = GroupTypeSerializer
+    permission_classes = (IsAuthenticatedOrReadOnly,)
     http_method_names = ['get']
 
 class CameraGroupViewSet(viewsets.ModelViewSet):
     queryset = CameraGroup.objects.all()
     serializer_class = CameraGroupSerializer
+    permission_classes = (IsAuthenticatedOrReadOnly,)
     http_method_names = ['get']
 
     def list(self, request, *args, **kwargs):
@@ -101,6 +104,7 @@ class CameraGroupViewSet(viewsets.ModelViewSet):
 
 class CameraToGroupViewSet(viewsets.ModelViewSet):
     queryset = CameraToGroup.objects.all()
+    permission_classes = (IsAuthenticatedOrReadOnly,)
     serializer_class = CameraToGroupSerializer
 
 ACTIVE_STREAMS = {}
@@ -117,7 +121,7 @@ def start_stream(ip, hls_output_dir, pk):
     return hls_stream
 
     
-def get_camera_view(request, pk, filename):
+def get_camera_view(request=None, pk=None, filename='stream.m3u8'):
     
     if not Camera.objects.filter(pk=pk).exists():
         return HttpResponseNotFound()
@@ -227,6 +231,25 @@ class HikvisionCameraPositionViewSet(viewsets.ViewSet):
         mycam.ptz.RelativeMove(moverequest)
 
         return Response({'message': 'Camera moved'})
+    
+def generate_preview(ip, output_folder, preview_filename):
+    cap = cv2.VideoCapture(f'rtsp://admin:bvrn2022@{ip}:554/ISAPI/Streaming/Channels/101')
+
+    ret, frame = cap.read()
+
+    cap.release()
+
+    if ret:
+        resized_frame = cv2.resize(frame, (720, 576))
+        cv2.imwrite(os.path.join(output_folder, preview_filename), resized_frame)
+       
+
+def update_previews():
+    cameras = Camera.objects.all()
+    for camera in cameras:
+        if camera.is_active:
+            generate_preview(camera.camera_ip, f'cameras/camera_{camera.pk}', 'preview.jpg')
+
     
 # class HikvisionCameraStreamViewSet(viewsets.ViewSet):
 #     def retrieve(self, request, pk=None):

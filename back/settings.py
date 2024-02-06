@@ -17,8 +17,8 @@ from datetime import timedelta
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-MEDIA_URL = '/vid/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'vid')
+MEDIA_URL = '/'
+MEDIA_ROOT = os.path.join(BASE_DIR, '')
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -180,8 +180,8 @@ SIMPLE_JWT = {
     "JTI_CLAIM": "jti",
 
     "SLIDING_TOKEN_REFRESH_EXP_CLAIM": "refresh_exp",
-    "SLIDING_TOKEN_LIFETIME": timedelta(minutes=1),
-    "SLIDING_TOKEN_REFRESH_LIFETIME": timedelta(minutes=2.5),
+    "SLIDING_TOKEN_LIFETIME": timedelta(seconds=10),
+    "SLIDING_TOKEN_REFRESH_LIFETIME": timedelta(minutes=0.5),
 
     "TOKEN_OBTAIN_SERIALIZER": "rest_framework_simplejwt.serializers.TokenObtainPairSerializer",
     "TOKEN_REFRESH_SERIALIZER": "rest_framework_simplejwt.serializers.TokenRefreshSerializer",

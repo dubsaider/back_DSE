@@ -10,7 +10,7 @@ class Location(models.Model):
 class Camera(models.Model):
 	camera_name = models.CharField(max_length=255)
 	camera_ip = models.CharField(max_length=15)
-	input_location = models.ForeignKey(Location, on_delete=models.CASCADE, related_name='imput_location')
+	input_location = models.ForeignKey(Location, on_delete=models.CASCADE, related_name='input_location')
 	output_location = models.ForeignKey(Location, on_delete=models.CASCADE, null=True, related_name='output_location')
 	camera_description = models.CharField(max_length=255, null=True, default='null')
 	camera_lat = models.FloatField(default=0.0)
@@ -18,6 +18,10 @@ class Camera(models.Model):
 	is_active = models.BooleanField(default=False, blank=True)
 	# camera_login = models.CharField(max_length=255, null=False, default='admin')
 	# camera_password = models.CharField(max_length=255, null=False)
+	
+	@property
+	def preview(self):
+		return f'cameras/camera_{self.pk}/preview.jpg'
 
 	def __str__(self):
 		return self.camera_name

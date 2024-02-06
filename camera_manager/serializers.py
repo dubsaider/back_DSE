@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from django.conf import settings
 from .models import (
     Camera, 
     Location,
@@ -6,12 +7,26 @@ from .models import (
     CameraGroup,
     CameraToGroup
 )
+import base64
+import os
 
 
 class CameraSerializer(serializers.ModelSerializer):
+    preview = serializers.SerializerMethodField()
+
     class Meta:
         model = Camera
-        fields = ('id', 'camera_name', 'camera_ip', 'input_location', 'output_location', 'camera_description', 'camera_lon', 'camera_lat', 'is_active')
+        fields = ('id', 'camera_name', 'camera_ip', 'input_location', 'output_location', 'camera_description', 'camera_lon', 'camera_lat', 'is_active', 'preview')
+
+    def get_preview(self, obj):
+        image_path = f'cameras/camera_{obj.pk}/preview.jpg'
+        if not obj.is_active or not os.path.exists(image_path):
+            return
+        # return f'{settings.MEDIA_URL}cameras/camera_{obj.pk}/preview.jpg'
+        
+        with open(image_path, 'rb') as img:
+            image_str = base64.b64encode(img.read()).decode()
+        return image_str      
 
 class LocationSerializer(serializers.ModelSerializer):
      class Meta:
