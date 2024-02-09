@@ -2,6 +2,7 @@ from django.contrib import admin
 from .models import (
     DetectedObjectType, 
     ObjectsDetectionLog,
+    Incident
 )
 
 
@@ -29,3 +30,4 @@ admin.site.unregister(DetectedObjectType)
 admin.site.register(DetectedObjectType, DetectedObjectTypeAdmin)
 admin.site.unregister(ObjectsDetectionLog)
 admin.site.register(ObjectsDetectionLog, ObjectsDetectionLogsAdmin)
+admin.site.register(Incident)

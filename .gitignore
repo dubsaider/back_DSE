@@ -35,3 +35,5 @@ vid/
 .vid/
 
 cameras/
+
+debug_cron.log

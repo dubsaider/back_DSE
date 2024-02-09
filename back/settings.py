@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'processing',
     'api',
     'rest_framework_simplejwt',
+    'django_crontab',
 ]
 
 MIDDLEWARE = [
@@ -93,7 +94,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': os.getenv('POSTGRES_DB', 'postgres'),
-        'USER': os.getenv('POSTGRES_USER', 'admin'),
+        'USER': os.getenv('POSTGRES_USER', 'postgres'),
         'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'bvrn2022'),
         'HOST': os.getenv('POSTGRES_HOST', 'localhost'),
         'PORT': os.getenv('POSTGRES_PORT', '5432'),
@@ -144,6 +145,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 APPEND_SLASH = False
 
+CRONJOBS = [
+    ('*/1 * * * *', 'camera_manager.cron.scheduled_job', '>> ' +
+     os.path.join(BASE_DIR, 'debug_cron.log' + ' 2>&1 '))
+]
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
