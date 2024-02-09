@@ -1,5 +1,6 @@
 from rest_framework import viewsets, status
 from rest_framework.response import Response
+from django.core.exceptions import ObjectDoesNotExist
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from kafka import KafkaProducer
@@ -56,27 +57,33 @@ class ProcessingViewSet(viewsets.ModelViewSet):
         process = Process.objects.create(
             cv_module_id_id=data['cv_module_id'],
             camera_id_id=data['camera_id'],
-            result_url='http://10.61.36.17:8888/processing_' + data['camera_id'] + '/' + data['cv_module_id']
+            result_url='http://10.61.36.17:8888/processing_' + str(data['camera_id']) + '/' + str(data['cv_module_id'])
         )
         events_data = data['events']
         for event_data in events_data:
-            event_type = event_data['event_type']
-            actions_data = event_data['actions']
+            try:
+                event_type = EventType.objects.get(id=event_data['event_type'])
+            except ObjectDoesNotExist:
+                return Response({'error': 'EventType not found'}, status=status.HTTP_400_BAD_REQUEST)
 
             process_event = ProcessEvent.objects.create(event_type=event_type)
-            
+
+            actions_data = event_data['actions']
             for action_data in actions_data:
-                action_type = action_data['action_type']
-                parameters = action_data['parameters']
-                
+                try:
+                    action_type = ActionType.objects.get(id=action_data['action_type'])
+                except ObjectDoesNotExist:
+                    return Response({'error': 'ActionType not found'}, status=status.HTTP_400_BAD_REQUEST)
+
                 process_action = ProcessAction.objects.create(
                     action_type=action_type,
-                    parameters=parameters
+                    parameters=action_data['parameters']
                 )
-                
+
                 process_event.actions.add(process_action)
 
             process.events.add(process_event)
+
         producer = KafkaProducer(bootstrap_servers=['10.61.36.15:9092', '10.61.36.15:9093', '10.61.36.15:9094'],
                                  value_serializer=lambda m: json.dumps(m).encode('utf-8')) 
         

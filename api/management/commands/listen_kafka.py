@@ -10,17 +10,16 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         consumer = KafkaConsumer(
-            "your_topic",
-            bootstrap_servers=["localhost:9092"],
+            "cluster-logs",
+            bootstrap_servers=['10.61.36.15:9092', '10.61.36.15:9093', '10.61.36.15:9094'],
             auto_offset_reset="earliest",
             enable_auto_commit=True,
-            group_id="your_group_id",
             value_deserializer=lambda x: json.loads(x.decode("utf-8")),
         )
 
         for message in consumer:
             msg = message.value
-
+            
             if "event_name" in msg:
                 Incident.objects.create(
                     timestamp=datetime.now(),
