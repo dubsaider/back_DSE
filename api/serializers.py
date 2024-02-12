@@ -5,6 +5,9 @@ from .models import (
     Incident,
     ZoneStats,
 )
+from camera_manager.serializers import (
+    CameraSerializer
+)
 
 
 class ObjectsDetectionLogSerializer(serializers.ModelSerializer):
@@ -21,11 +24,15 @@ class DetectedObjectTypeSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class IncidentSerializer(serializers.ModelSerializer):
+   camera = CameraSerializer()
+
    class Meta:
        model = Incident
        fields = ['timestamp', 'camera', 'event', 'incident', 'link']
 
 class ZoneStatsSerializer(serializers.ModelSerializer):
+   camera = CameraSerializer()
+   
    class Meta:
        model = ZoneStats
        fields = ['timestamp', 'camera', 'location', 'change']

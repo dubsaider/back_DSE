@@ -31,12 +31,15 @@ class EventTypeSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class ProcessActionSerializer(serializers.ModelSerializer):
+    action_type = ActionTypeSerializer()
+
     class Meta:
         model = ProcessAction
         fields = '__all__'
 
 class ProcessEventSerializer(serializers.ModelSerializer):
     actions = ProcessActionSerializer(many=True)
+    event_type = EventTypeSerializer()
 
     class Meta:
         model = ProcessEvent
@@ -44,8 +47,8 @@ class ProcessEventSerializer(serializers.ModelSerializer):
 
 class ProcessSerializer(serializers.ModelSerializer):
     events = ProcessEventSerializer(many=True)
-    cv_module_id = ComputerVisionModuleSerializer()
-    camera_id = CameraSerializer()
+    cv_module = ComputerVisionModuleSerializer()
+    camera = CameraSerializer()
 
     class Meta:
         model = Process

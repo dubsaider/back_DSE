@@ -45,10 +45,10 @@ class ProcessEvent(models.Model):
 	    return f'{self.event_type} {[action for action in self.actions.all()]}'
 
 class Process(models.Model):
-	cv_module_id = models.ForeignKey(ComputerVisionModule, on_delete=models.CASCADE)
-	camera_id = models.ForeignKey(Camera, on_delete=models.CASCADE)
+	cv_module = models.ForeignKey(ComputerVisionModule, on_delete=models.CASCADE)
+	camera = models.ForeignKey(Camera, on_delete=models.CASCADE)
 	events = models.ManyToManyField(ProcessEvent)
 	result_url = models.URLField(null=True, blank=True)
 	
 	def __str__(self):
-	    return f"{self.camera_id.camera_name} - {self.cv_module_id.cv_modules_name}"
+	    return f"{self.camera.camera_name} - {self.cv_module.cv_modules_name}"
