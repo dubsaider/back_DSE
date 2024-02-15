@@ -17,15 +17,15 @@ class ObjectsDetectionLog(models.Model):
 	type = models.ForeignKey(DetectedObjectType, on_delete=models.CASCADE)
 	count = models.IntegerField(default=0)
 
+class IncidentType(models.Model):
+    name = models.CharField(max_length=255)
+    description = models.CharField(max_length=255, null=True, default=None)
+
 class Incident(models.Model):
    timestamp = models.DateTimeField(auto_now_add=True)
    camera = models.ForeignKey(Camera, on_delete=models.CASCADE)
-   event = models.TextField()
-   incident = models.TextField()
-   link = models.URLField()
-
-   def __str__(self):
-       return self.event
+   incident_type = models.ForeignKey(IncidentType, on_delete=models.CASCADE)
+   link = models.URLField(blank=True, default=None)
 
 class ZoneStats(models.Model):
    timestamp = models.DateTimeField(auto_now_add=True)
