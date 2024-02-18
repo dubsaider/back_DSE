@@ -55,14 +55,14 @@ class ProcessingViewSet(viewsets.ModelViewSet):
     def create(self, request):
         data = request.data
         process = Process.objects.create(
-            cv_module_id_id=data['cv_module_id'],
-            camera_id_id=data['camera_id'],
+            cv_module_id=data['cv_module_id'],
+            camera_id=data['camera_id'],
             result_url='http://10.61.36.17:8888/processing_' + str(data['camera_id']) + '/' + str(data['cv_module_id'])
         )
         events_data = data['events']
         for event_data in events_data:
             try:
-                event_type = EventType.objects.get(id=event_data['event_type'])
+                event_type = EventType.objects.get(id=event_data['event_type_id'])
             except ObjectDoesNotExist:
                 return Response({'error': 'EventType not found'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -71,7 +71,7 @@ class ProcessingViewSet(viewsets.ModelViewSet):
             actions_data = event_data['actions']
             for action_data in actions_data:
                 try:
-                    action_type = ActionType.objects.get(id=action_data['action_type'])
+                    action_type = ActionType.objects.get(id=action_data['action_type_id'])
                 except ObjectDoesNotExist:
                     return Response({'error': 'ActionType not found'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -103,10 +103,20 @@ class ProcessingViewSet(viewsets.ModelViewSet):
               "scene_number": 1
             },
             "events": [
-              {
+                {
+                    "event_name": "check_any_object",
+                    "event_actions": [
+                        "line_count", "logging"
+                    ],
+                    "parameters": {
+                            "lines": {
+                                "line0": [[1200, 900], [1500, 900]]}
+                        }
+                },
+                {
                   "event_name": "all_frames",
                   "event_actions": [
-                    "box_drawing", "record", "rtsp_server_stream", "logging"
+                    "box_drawing", "record", "rtsp_server_stream"
                   ],
                   "parameters": {
                     "FPS": 30,
