@@ -4,6 +4,8 @@ from .models import (
     ObjectsDetectionLog,
     Incident,
     IncidentType,
+    CameraStats,
+    ZoneStats
 )
 
 
@@ -32,3 +34,5 @@ admin.site.unregister(ObjectsDetectionLog)
 admin.site.register(ObjectsDetectionLog, ObjectsDetectionLogsAdmin)
 admin.site.register(Incident)
 admin.site.register(IncidentType)
+admin.site.register(CameraStats)
+admin.site.register(ZoneStats)

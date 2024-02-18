@@ -9,12 +9,14 @@ from .models import (
             ObjectsDetectionLog,
             Incident,
             ZoneStats,
+            CameraStats
         )
 from .serializers import (
         ObjectsDetectionLogSerializer,
         DetectedObjectTypeSerializer,
         IncidentSerializer,
         ZoneStatsSerializer,
+        CameraStatsSerializer,
     )
 from rest_framework.permissions import (
         IsAuthenticated,
@@ -81,3 +83,8 @@ class ObjectsDetectionLogViewSet(viewsets.ViewSet):
         object_detection_log = get_object_or_404(queryset, pk=pk)
         serializer = ObjectsDetectionLogSerializer(object_detection_log)
         return Response(serializer.data)
+
+class CameraStatsViewSet(viewsets.ModelViewSet):
+    queryset = CameraStats.objects.all()
+    serializer_class = CameraStatsSerializer
+    http_method_names = ['get']

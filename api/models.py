@@ -29,9 +29,18 @@ class Incident(models.Model):
 
 class ZoneStats(models.Model):
    timestamp = models.DateTimeField(auto_now_add=True)
-   camera = models.ForeignKey(Camera, on_delete=models.CASCADE)
-   location = models.ForeignKey(Location, on_delete=models.CASCADE)
-   change = models.IntegerField()
+   location = models.ForeignKey(Location, on_delete=models.CASCADE, default='0')
+   value = models.IntegerField(default=0)
+   change = models.IntegerField(default=0)
 
    def __str__(self):
        return self.location
+   
+class CameraStats(models.Model):
+   timestamp = models.DateTimeField(auto_now_add=True)
+   camera = models.ForeignKey(Camera, on_delete=models.CASCADE)
+   input_value = models.IntegerField()
+   output_value = models.IntegerField()
+
+   def __str__(self):
+       return self.camera

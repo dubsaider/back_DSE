@@ -7,7 +7,8 @@ from .models import (
     ZoneStats,
 )
 from camera_manager.serializers import (
-    CameraSerializer
+    CameraSerializer,
+    LocationSerializer,
 )
 
 
@@ -38,9 +39,15 @@ class IncidentSerializer(serializers.ModelSerializer):
        fields = ['timestamp', 'camera', 'incident_type', 'link']
 
 class ZoneStatsSerializer(serializers.ModelSerializer):
+   location = LocationSerializer()
+   
+   class Meta:
+       model = ZoneStats
+       fields = '__all__'
+
+class CameraStatsSerializer(serializers.ModelSerializer):
    camera = CameraSerializer()
    
    class Meta:
        model = ZoneStats
-       fields = ['timestamp', 'camera', 'location', 'change']
-
+       fields = '__all__'
