@@ -1,11 +1,9 @@
 from rest_framework import serializers
 from .models import (
-    DetectedObjectType, 
-    ObjectsDetectionLog,
     IncidentType,
     Incident,
-    ZoneStats,
-    CameraStats
+    ZoneStat,
+    CameraStat
 )
 from camera_manager.serializers import (
     CameraSerializer,
@@ -13,22 +11,9 @@ from camera_manager.serializers import (
 )
 
 
-class ObjectsDetectionLogSerializer(serializers.ModelSerializer):
-    start_datestamp = serializers.DateTimeField(write_only=True, required=False)
-    end_datestamp = serializers.DateTimeField(write_only=True, required=False)
-
-    class Meta:
-        model = ObjectsDetectionLog
-        fields = '__all__'
-
-class DetectedObjectTypeSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = DetectedObjectType
-        fields = '__all__'
-
 class IncidentTypeSerializer(serializers.ModelSerializer):
     class Meta:
-        model = DetectedObjectType
+        model = IncidentType
         fields = '__all__'
 
 class IncidentSerializer(serializers.ModelSerializer):
@@ -39,16 +24,16 @@ class IncidentSerializer(serializers.ModelSerializer):
        model = Incident
        fields = ['timestamp', 'camera', 'incident_type', 'link']
 
-class ZoneStatsSerializer(serializers.ModelSerializer):
+class ZoneStatSerializer(serializers.ModelSerializer):
    location = LocationSerializer()
    
    class Meta:
-       model = ZoneStats
+       model = ZoneStat
        fields = '__all__'
 
-class CameraStatsSerializer(serializers.ModelSerializer):
+class CameraStatSerializer(serializers.ModelSerializer):
    camera = CameraSerializer()
    
    class Meta:
-       model = CameraStats
+       model = CameraStat
        fields = ['timestamp', 'camera', 'input_value', 'output_value']
