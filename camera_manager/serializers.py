@@ -1,5 +1,4 @@
 from rest_framework import serializers
-from django.conf import settings
 from .models import (
     Camera, 
     Location,
@@ -7,26 +6,27 @@ from .models import (
     CameraGroup,
     CameraToGroup
 )
-import base64
-import os
+from processing.models import Process
 
 
 class CameraSerializer(serializers.ModelSerializer):
-    preview = serializers.SerializerMethodField()
+    raw_livestream = serializers.SerializerMethodField()
+    processed_livestream = serializers.SerializerMethodField()
 
     class Meta:
         model = Camera
-        fields = ('id', 'camera_name', 'camera_ip', 'input_location', 'output_location', 'camera_description', 'camera_lon', 'camera_lat', 'is_active', 'preview')
-
-    def get_preview(self, obj):
-        image_path = f'cameras/camera_{obj.pk}/preview.jpg'
-        if not obj.is_active or not os.path.exists(image_path):
-            return
-        # return f'{settings.MEDIA_URL}cameras/camera_{obj.pk}/preview.jpg'
-        
-        with open(image_path, 'rb') as img:
-            image_str = base64.b64encode(img.read()).decode()
-        return image_str      
+        fields = ('id', 'camera_name', 'camera_ip', 'input_location', 'output_location', 'camera_description', 'camera_lon', 'camera_lat', 'is_active', 'raw_livestream', 'processed_livestream')
+    
+    def get_raw_livestream(self, obj):
+        if obj.is_active:
+            login = 'admin'
+            password = 'bvrn2022'
+            return f'rtsp://{login}:{password}@{obj.camera_ip}:554/ISAPI/Streaming/Channels/101'
+        return None
+	
+    def get_processed_livestream(self, obj):
+        process = Process.objects.filter(camera=obj).first()
+        return process.result_url if process else None
 
 class LocationSerializer(serializers.ModelSerializer):
      class Meta:
