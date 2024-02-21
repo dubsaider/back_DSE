@@ -1,6 +1,7 @@
 from rest_framework import viewsets, status
 from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
+from rest_framework.pagination import PageNumberPagination
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from datetime import datetime, timedelta
@@ -30,7 +31,55 @@ class ZoneStatViewSet(viewsets.ModelViewSet):
     queryset = ZoneStat.objects.all()
     serializer_class = ZoneStatSerializer
     http_method_names = ['get']
+    pagination_class = PageNumberPagination
 
+    @swagger_auto_schema(manual_parameters=[
+        openapi.Parameter(
+            name='start_datetime',
+            in_=openapi.IN_QUERY,
+            description='Start datetime to filter by in the format YYYY-MM-DDTHH:MM:SS',
+            type=openapi.TYPE_STRING,
+            required=False
+        ),
+        openapi.Parameter(
+            name='end_datetime',
+            in_=openapi.IN_QUERY,
+            description='End datetime to filter by in the format YYYY-MM-DDTHH:MM:SS',
+            type=openapi.TYPE_STRING,
+            required=False
+        ),
+        openapi.Parameter(
+            name='location_id',
+            in_=openapi.IN_QUERY,
+            description='ID of the location to filter by',
+            type=openapi.TYPE_INTEGER,
+            required=False
+        )
+    ])
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        # Фильтрация по дате и времени и локации
+        start_datetime = request.query_params.get('start_datetime', None)
+        end_datetime = request.query_params.get('end_datetime', None)
+        location_id = request.query_params.get('location_id', None)
+
+        if start_datetime is not None and end_datetime is not None:
+            start_datetime = datetime.strptime(start_datetime, '%Y-%m-%dT%H:%M:%S')
+            end_datetime = datetime.strptime(end_datetime, '%Y-%m-%dT%H:%M:%S')
+            queryset = queryset.filter(timestamp__range=(start_datetime, end_datetime))
+
+        if location_id is not None:
+            queryset = queryset.filter(location_id=location_id)
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+    
 
 class CameraStatViewSet(viewsets.ModelViewSet):
     queryset = CameraStat.objects.all()
@@ -46,9 +95,16 @@ class CameraStatViewSet(viewsets.ModelViewSet):
             required=False
         ),
         openapi.Parameter(
-            name='date_range',
+            name='start_datetime',
             in_=openapi.IN_QUERY,
-            description='Date range to filter by in the format YYYY-MM-DD,YYYY-MM-DD',
+            description='Start datetime to filter by in the format YYYY-MM-DDTHH:MM:SS',
+            type=openapi.TYPE_STRING,
+            required=False
+        ),
+        openapi.Parameter(
+            name='end_datetime',
+            in_=openapi.IN_QUERY,
+            description='End datetime to filter by in the format YYYY-MM-DDTHH:MM:SS',
             type=openapi.TYPE_STRING,
             required=False
         )
@@ -60,7 +116,8 @@ class CameraStatViewSet(viewsets.ModelViewSet):
         queryset = CameraStat.objects.all()
 
         camera_id = self.request.query_params.get('camera_id', None)
-        date_range = self.request.query_params.get('date_range', None)
+        start_datetime = self.request.query_params.get('start_datetime', None)
+        end_datetime = self.request.query_params.get('end_datetime', None)
 
         if camera_id is not None:
             try:
@@ -70,18 +127,17 @@ class CameraStatViewSet(viewsets.ModelViewSet):
                                 status=status.HTTP_404_NOT_FOUND)
             queryset = queryset.filter(camera=camera)
 
-        if date_range is not None:
+        if start_datetime is not None and end_datetime is not None:
             try:
-                start_date, end_date = date_range.split(',')
-                start_date = datetime.strptime(start_date, "%Y-%m-%d")
-                end_date = datetime.strptime(end_date, "%Y-%m-%d")
-                queryset = queryset.filter(timestamp__range=(start_date, end_date))
+                start_datetime = datetime.strptime(start_datetime, "%Y-%m-%dT%H:%M:%S")
+                end_datetime = datetime.strptime(end_datetime, "%Y-%m-%dT%H:%M:%S")
+                queryset = queryset.filter(timestamp__range=(start_datetime, end_datetime))
             except ValueError:
-                return Response({"detail": "Invalid date range format. Expected format is YYYY-MM-DD,YYYY-MM-DD."},
+                return Response({"detail": "Invalid datetime format. Expected format is YYYY-MM-DDTHH:MM:SS."},
                                 status=status.HTTP_400_BAD_REQUEST)
         else:
-            end_date = datetime.now()
-            start_date = end_date - timedelta(days=1)
-            queryset = queryset.filter(timestamp__range=(start_date, end_date))
+            end_datetime = datetime.now()
+            start_datetime = end_datetime - timedelta(days=1)
+            queryset = queryset.filter(timestamp__range=(start_datetime, end_datetime))
 
         return queryset

@@ -15,16 +15,16 @@ class Incident(models.Model):
    link = models.URLField(blank=True, default=None)
 
 class ZoneStat(models.Model):
-   timestamp = models.DateTimeField(auto_now_add=True)
-   location = models.ForeignKey(Location, on_delete=models.CASCADE, default='0')
+   timestamp = models.DateTimeField()
+   location = models.ForeignKey(Location, on_delete=models.CASCADE)
    value = models.IntegerField(default=0)
    change = models.IntegerField(default=0)
 
    def __str__(self):
-       return self.location
+       return f'{self.location.location} - {self.timestamp}'
    
 class CameraStat(models.Model):
-   timestamp = models.DateTimeField(auto_now_add=True)
+   timestamp = models.DateTimeField()
    camera = models.ForeignKey(Camera, on_delete=models.CASCADE)
    input_value = models.IntegerField()
    output_value = models.IntegerField()

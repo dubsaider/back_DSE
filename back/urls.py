@@ -38,7 +38,7 @@ from rest_framework_simplejwt.views import (
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('log/', include('api.urls')),
+    path('stats/', include('api.urls')),
     path('processing/', include('processing.urls')),
     path('camera_manager/', include('camera_manager.urls')),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
