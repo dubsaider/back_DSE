@@ -43,4 +43,4 @@ class CameraStats(models.Model):
    output_value = models.IntegerField()
 
    def __str__(self):
-       return self.camera
+       return self.camera.camera_name
