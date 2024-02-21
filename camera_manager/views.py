@@ -8,7 +8,6 @@ from rest_framework import viewsets
 from rest_framework.response import Response
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
-import cv2
 from .models import (
             Camera, 
             Location,
@@ -144,16 +143,12 @@ def get_camera_view(request=None, pk=None, filename='stream.m3u8'):
 
 
 def prepeare_camera(mycam):
-    # ptz service
     ptz = mycam.create_ptz_service()
 
-    # media service
     media = mycam.create_media_service()
 
-    # Get target profile
     media_profile = media.GetProfiles()[0]
 
-    # Get ptz config
     request = ptz.create_type('GetConfigurationOptions')
     request.ConfigurationToken = media_profile.PTZConfiguration.token
     ptz_configuration_options = ptz.GetConfigurationOptions(request)
@@ -183,7 +178,6 @@ class HikvisionCameraZoomViewSet(viewsets.ViewSet):
 
         camera = Camera.objects.get(id=camera_id)
     
-        # Connect to the camera using the ONVIF library
         mycam = ONVIFCamera(camera.camera_ip, 80, 'admin', 'bvrn2022')
         moverequest = prepeare_camera(mycam=mycam)
         
@@ -195,7 +189,6 @@ class HikvisionCameraZoomViewSet(viewsets.ViewSet):
         else:
             moverequest.Translation.Zoom = -0.003
         
-         # Adjust the y value as needed
         mycam.ptz.RelativeMove(moverequest)
         return Response({'message': 'Camera zoomed in'})
 
@@ -210,7 +203,6 @@ class HikvisionCameraPositionViewSet(viewsets.ViewSet):
         direction = request.query_params['direction']
         mycam = Camera.objects.get(id=camera_id)
     
-        # Connect to the camera using the ONVIF library
         mycam = ONVIFCamera(mycam.camera_ip, 80, 'admin', 'bvrn2022')
 
         moverequest = prepeare_camera(mycam=mycam)
@@ -227,62 +219,7 @@ class HikvisionCameraPositionViewSet(viewsets.ViewSet):
         elif direction == "DOWN":
             moverequest.Translation.PanTilt.y = -0.003
         
-         # Adjust the y value as needed
         mycam.ptz.RelativeMove(moverequest)
 
         return Response({'message': 'Camera moved'})
     
-def generate_preview(ip, output_folder, preview_filename):
-    cap = cv2.VideoCapture(f'rtsp://admin:bvrn2022@{ip}:554/ISAPI/Streaming/Channels/101')
-
-    ret, frame = cap.read()
-
-    cap.release()
-
-    if ret:
-        resized_frame = cv2.resize(frame, (720, 576))
-        cv2.imwrite(os.path.join(output_folder, preview_filename), resized_frame)
-       
-
-def update_previews():
-    cameras = Camera.objects.all()
-    for camera in cameras:
-        if camera.is_active:
-            generate_preview(camera.camera_ip, f'cameras/camera_{camera.pk}', 'preview.jpg')
-
-    
-# class HikvisionCameraStreamViewSet(viewsets.ViewSet):
-#     def retrieve(self, request, pk=None):
-#         camera_id = pk
-#         camera = Camera.objects.get(id=camera_id)
-
-#         # Connect to the camera using the ONVIF library
-#         mycam = ONVIFCamera(camera.camera_ip, 80, 'admin', 'bvrn2022')
-
-#         # Get the media service
-#         media = mycam.create_media_service()
-
-#         # Get the target profile
-#         profiles = media.GetProfiles()
-#         profile_token = profiles[0].token
-
-#         # Get the video stream URI
-#         stream_uri = media.GetStreamUri({'StreamSetup': {'Stream': 'RTP-Unicast', 'Transport': {'Protocol': 'RTSP'}}}, profile_token)
-
-#         # Open the video stream
-#         cap = cv2.VideoCapture(stream_uri.Uri)
-
-#         def generate_frames():
-#             while True:
-#                 ret, frame = cap.read()
-#                 if not ret:
-#                     break
-
-#                 ret, buffer = cv2.imencode('.jpg', frame)
-#                 if not ret:
-#                     break
-
-#                 yield (b'--frame\r\n'
-#                        b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
-
-#         return StreamingHttpResponse(generate_frames(), content_type='multipart/x-mixed-replace; boundary=frame')

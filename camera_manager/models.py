@@ -1,5 +1,4 @@
-from django.db import models
-import hashlib
+from django.db import models		
 
 class Location(models.Model):
 	location = models.CharField(max_length=255)
@@ -18,10 +17,6 @@ class Camera(models.Model):
 	is_active = models.BooleanField(default=False, blank=True)
 	# camera_login = models.CharField(max_length=255, null=False, default='admin')
 	# camera_password = models.CharField(max_length=255, null=False)
-	
-	@property
-	def preview(self):
-		return f'cameras/camera_{self.pk}/preview.jpg'
 
 	def __str__(self):
 		return self.camera_name
