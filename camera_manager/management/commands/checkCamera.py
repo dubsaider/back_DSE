@@ -25,7 +25,7 @@ class CameraCheckCommand(BaseCommand):
 
             with requests.Session() as session:
                 try:
-                    response = session.get(f"http://{ip}:554", timeout=1)
+                    response = session.get(f"http://{ip}:554", timeout=5)
                     new_status = response.ok
                 except requests.exceptions.Timeout:
                     self.stderr.write(self.style.WARNING('Camera check timed out: {}'.format(ip)))

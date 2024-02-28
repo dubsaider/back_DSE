@@ -12,6 +12,6 @@ class CameraManagerConfig(AppConfig):
         cameraChecker = CameraCheckCommand()
         
         scheduler = BackgroundScheduler()
-        scheduler.add_job(cameraChecker.handle, 'interval', minutes=60)
+        scheduler.add_job(cameraChecker.handle, 'interval', minutes=15)
         scheduler.start()
     

@@ -1,5 +1,6 @@
 from rest_framework import viewsets, status
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 from drf_yasg import openapi
@@ -59,18 +60,27 @@ class ZoneStatViewSet(viewsets.ModelViewSet):
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
 
-        # Фильтрация по дате и времени и локации
         start_datetime = request.query_params.get('start_datetime', None)
         end_datetime = request.query_params.get('end_datetime', None)
         location_id = request.query_params.get('location_id', None)
 
         if start_datetime is not None and end_datetime is not None:
-            start_datetime = datetime.strptime(start_datetime, '%Y-%m-%dT%H:%M:%S')
-            end_datetime = datetime.strptime(end_datetime, '%Y-%m-%dT%H:%M:%S')
+            try:
+                start_datetime = timezone.datetime.strptime(start_datetime, '%Y-%m-%dT%H:%M:%S')
+                end_datetime = timezone.datetime.strptime(end_datetime, '%Y-%m-%dT%H:%M:%S')
+                queryset = queryset.filter(timestamp__range=(start_datetime, end_datetime))
+            except ValueError:
+                return Response({"detail": "Invalid datetime format. Expected format is YYYY-MM-DDTHH:MM:SS."},
+                                status=status.HTTP_400_BAD_REQUEST)
+        else:
+            end_datetime = timezone.now()
+            start_datetime = end_datetime - timedelta(days=1)
             queryset = queryset.filter(timestamp__range=(start_datetime, end_datetime))
 
         if location_id is not None:
             queryset = queryset.filter(location_id=location_id)
+
+        queryset = queryset.order_by('timestamp')
 
         page = self.paginate_queryset(queryset)
         if page is not None:
@@ -129,15 +139,17 @@ class CameraStatViewSet(viewsets.ModelViewSet):
 
         if start_datetime is not None and end_datetime is not None:
             try:
-                start_datetime = datetime.strptime(start_datetime, "%Y-%m-%dT%H:%M:%S")
-                end_datetime = datetime.strptime(end_datetime, "%Y-%m-%dT%H:%M:%S")
+                start_datetime = timezone.datetime.strptime(start_datetime, "%Y-%m-%dT%H:%M:%S")
+                end_datetime = timezone.datetime.strptime(end_datetime, "%Y-%m-%dT%H:%M:%S")
                 queryset = queryset.filter(timestamp__range=(start_datetime, end_datetime))
             except ValueError:
                 return Response({"detail": "Invalid datetime format. Expected format is YYYY-MM-DDTHH:MM:SS."},
                                 status=status.HTTP_400_BAD_REQUEST)
         else:
-            end_datetime = datetime.now()
+            end_datetime = timezone.now()
             start_datetime = end_datetime - timedelta(days=1)
             queryset = queryset.filter(timestamp__range=(start_datetime, end_datetime))
+
+        queryset = queryset.order_by('timestamp')
 
         return queryset
