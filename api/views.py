@@ -167,7 +167,6 @@ class CameraStatViewSet(viewsets.ModelViewSet):
         queryset = queryset.order_by('timestamp')
 
         page = self.paginate_queryset(queryset)
-        print(page)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
             return self.get_paginated_response(serializer.data)
