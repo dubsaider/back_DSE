@@ -22,19 +22,25 @@ from rest_framework.permissions import (
         IsAuthenticatedOrReadOnly
     )
 
-class IncidentViewSet(viewsets.ModelViewSet):
-    queryset = Incident.objects.all()
-    serializer_class = IncidentSerializer
-    http_method_names = ['get']
+def create_manual_parameters(**kwargs):
+    pagination_parameters = [
+        openapi.Parameter(
+            name='page',
+            in_=openapi.IN_QUERY,
+            description='Номер страницы',
+            type=openapi.TYPE_INTEGER,
+            required=False
+        ),
+        openapi.Parameter(
+            name='page_size',
+            in_=openapi.IN_QUERY,
+            description='Размер страницы',
+            type=openapi.TYPE_INTEGER,
+            required=False
+        )
+    ]
 
-
-class ZoneStatViewSet(viewsets.ModelViewSet):
-    queryset = ZoneStat.objects.all()
-    serializer_class = ZoneStatSerializer
-    http_method_names = ['get']
-    pagination_class = PageNumberPagination
-
-    @swagger_auto_schema(manual_parameters=[
+    parameters = pagination_parameters + [
         openapi.Parameter(
             name='start_datetime',
             in_=openapi.IN_QUERY,
@@ -49,14 +55,52 @@ class ZoneStatViewSet(viewsets.ModelViewSet):
             type=openapi.TYPE_STRING,
             required=False
         ),
-        openapi.Parameter(
-            name='location_id',
-            in_=openapi.IN_QUERY,
-            description='ID of the location to filter by',
-            type=openapi.TYPE_INTEGER,
-            required=False
+    ]
+
+    for name, description in kwargs.items():
+        parameters.append(
+            openapi.Parameter(
+                name=name,
+                in_=openapi.IN_QUERY,
+                description=description,
+                type=openapi.TYPE_INTEGER,
+                required=False
+            )
         )
-    ])
+    return parameters
+
+class CustomPageNumberPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+    def get_paginated_response(self, data):
+        return Response({
+            'links': {
+                'next': self.get_next_link(),
+                'previous': self.get_previous_link()
+            },
+            'count': self.page.paginator.count,
+            'total_pages': self.page.paginator.num_pages,
+            'results': data
+        })
+
+class IncidentViewSet(viewsets.ModelViewSet):
+    queryset = Incident.objects.all()
+    serializer_class = IncidentSerializer
+    http_method_names = ['get']
+    pagination_class = CustomPageNumberPagination
+
+
+class ZoneStatViewSet(viewsets.ModelViewSet):
+    queryset = ZoneStat.objects.all()
+    serializer_class = ZoneStatSerializer
+    http_method_names = ['get']
+    pagination_class = CustomPageNumberPagination
+
+    @swagger_auto_schema(
+            manual_parameters=create_manual_parameters(location_id='ID of the location to filter by'),
+            responses={200: openapi.Response('description', ZoneStatSerializer(many=True))})
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
 
@@ -72,10 +116,6 @@ class ZoneStatViewSet(viewsets.ModelViewSet):
             except ValueError:
                 return Response({"detail": "Invalid datetime format. Expected format is YYYY-MM-DDTHH:MM:SS."},
                                 status=status.HTTP_400_BAD_REQUEST)
-        else:
-            end_datetime = timezone.now()
-            start_datetime = end_datetime - timedelta(days=1)
-            queryset = queryset.filter(timestamp__range=(start_datetime, end_datetime))
 
         if location_id is not None:
             queryset = queryset.filter(location_id=location_id)
@@ -95,39 +135,17 @@ class CameraStatViewSet(viewsets.ModelViewSet):
     queryset = CameraStat.objects.all()
     serializer_class = CameraStatSerializer
     http_method_names = ['get']
+    pagination_class = CustomPageNumberPagination
 
-    @swagger_auto_schema(manual_parameters=[
-        openapi.Parameter(
-            name='camera_id',
-            in_=openapi.IN_QUERY,
-            description='ID of the camera to filter by',
-            type=openapi.TYPE_INTEGER,
-            required=False
-        ),
-        openapi.Parameter(
-            name='start_datetime',
-            in_=openapi.IN_QUERY,
-            description='Start datetime to filter by in the format YYYY-MM-DDTHH:MM:SS',
-            type=openapi.TYPE_STRING,
-            required=False
-        ),
-        openapi.Parameter(
-            name='end_datetime',
-            in_=openapi.IN_QUERY,
-            description='End datetime to filter by in the format YYYY-MM-DDTHH:MM:SS',
-            type=openapi.TYPE_STRING,
-            required=False
-        )
-    ])
+    @swagger_auto_schema(
+            manual_parameters=create_manual_parameters(camera_id='ID of the camera to filter by')
+            )
     def list(self, request, *args, **kwargs):
-        return super().list(request, *args, **kwargs)
+        queryset = self.filter_queryset(self.get_queryset())
 
-    def get_queryset(self):
-        queryset = CameraStat.objects.all()
-
-        camera_id = self.request.query_params.get('camera_id', None)
-        start_datetime = self.request.query_params.get('start_datetime', None)
-        end_datetime = self.request.query_params.get('end_datetime', None)
+        camera_id = request.query_params.get('camera_id', None)
+        start_datetime = request.query_params.get('start_datetime', None)
+        end_datetime = request.query_params.get('end_datetime', None)
 
         if camera_id is not None:
             try:
@@ -145,11 +163,14 @@ class CameraStatViewSet(viewsets.ModelViewSet):
             except ValueError:
                 return Response({"detail": "Invalid datetime format. Expected format is YYYY-MM-DDTHH:MM:SS."},
                                 status=status.HTTP_400_BAD_REQUEST)
-        else:
-            end_datetime = timezone.now()
-            start_datetime = end_datetime - timedelta(days=1)
-            queryset = queryset.filter(timestamp__range=(start_datetime, end_datetime))
 
         queryset = queryset.order_by('timestamp')
 
-        return queryset
+        page = self.paginate_queryset(queryset)
+        print(page)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
