@@ -25,8 +25,8 @@ class CameraSerializer(serializers.ModelSerializer):
         return None
 	
     def get_processed_livestream(self, obj):
-        process = Process.objects.filter(camera=obj).first()
-        return process.result_url if process else None
+        processes = Process.objects.filter(camera=obj)
+        return [process.result_url for process in processes]
 
 class LocationSerializer(serializers.ModelSerializer):
      class Meta:
