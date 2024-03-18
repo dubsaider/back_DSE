@@ -86,10 +86,24 @@ class CustomPageNumberPagination(PageNumberPagination):
         })
 
 class IncidentViewSet(viewsets.ModelViewSet):
-    queryset = Incident.objects.all()
     serializer_class = IncidentSerializer
     http_method_names = ['get']
     pagination_class = CustomPageNumberPagination
+
+    def get_queryset(self):
+        queryset = Incident.objects.all()
+        camera_id = self.request.query_params.get('camera_id', None)
+        if camera_id is not None:
+            camera = get_object_or_404(Camera, id=camera_id)
+            queryset = queryset.filter(camera=camera)
+        return queryset
+    
+    @swagger_auto_schema(
+        manual_parameters=create_manual_parameters(camera_id='ID of the camera to filter by'),
+        responses={200: openapi.Response('description', IncidentSerializer(many=True))}
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
 
 class ZoneStatViewSet(viewsets.ModelViewSet):
