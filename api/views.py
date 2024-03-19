@@ -7,6 +7,7 @@ from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from datetime import datetime, timedelta
 from .models import (
+            IncidentType,
             Incident,
             ZoneStat,
             CameraStat,
@@ -16,6 +17,7 @@ from .serializers import (
         IncidentSerializer,
         ZoneStatSerializer,
         CameraStatSerializer,
+        IncidentTypeSerializer,
     )
 from rest_framework.permissions import (
         IsAuthenticated,
@@ -85,6 +87,11 @@ class CustomPageNumberPagination(PageNumberPagination):
             'results': data
         })
 
+class IncidentTypeViewSet(viewsets.ModelViewSet):
+    queryset = IncidentType.objects.all()
+    http_method_names = ['get']
+    serializer_class = IncidentTypeSerializer
+
 class IncidentViewSet(viewsets.ModelViewSet):
     serializer_class = IncidentSerializer
     http_method_names = ['get']
@@ -96,10 +103,25 @@ class IncidentViewSet(viewsets.ModelViewSet):
         if camera_id is not None:
             camera = get_object_or_404(Camera, id=camera_id)
             queryset = queryset.filter(camera=camera)
+
+        start_datetime = self.request.query_params.get('start_datetime', None)
+        end_datetime = self.request.query_params.get('end_datetime', None)
+        if start_datetime is not None:
+            queryset = queryset.filter(datetime__gte=datetime.strptime(start_datetime, '%Y-%m-%dT%H:%M:%S'))
+        if end_datetime is not None:
+            queryset = queryset.filter(datetime__lte=datetime.strptime(end_datetime, '%Y-%m-%dT%H:%M:%S'))
+
+        incident_type = self.request.query_params.get('incident_type', None)
+        if incident_type is not None:
+            queryset = queryset.filter(incident_type=incident_type)
+
         return queryset
     
     @swagger_auto_schema(
-        manual_parameters=create_manual_parameters(camera_id='ID of the camera to filter by'),
+        manual_parameters=create_manual_parameters(
+            camera_id='ID of the camera to filter by',
+            incident_type='Type of the incident to filter by'
+        ),
         responses={200: openapi.Response('description', IncidentSerializer(many=True))}
     )
     def list(self, request, *args, **kwargs):
