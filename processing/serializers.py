@@ -8,7 +8,6 @@ from .models import (
     ProcessEvent, 
     Process
 )
-from camera_manager.serializers import CameraSerializer
 
 class ModelSerializer(serializers.ModelSerializer):
     class Meta:
@@ -48,7 +47,6 @@ class ProcessEventSerializer(serializers.ModelSerializer):
 class ProcessSerializer(serializers.ModelSerializer):
     events = ProcessEventSerializer(many=True)
     cv_module = ComputerVisionModuleSerializer()
-    camera = CameraSerializer()
 
     class Meta:
         model = Process

@@ -46,7 +46,7 @@ class ProcessEvent(models.Model):
 
 class Process(models.Model):
 	cv_module = models.ForeignKey(ComputerVisionModule, on_delete=models.CASCADE)
-	camera = models.ForeignKey(Camera, on_delete=models.CASCADE)
+	camera = models.ForeignKey(Camera, related_name='processing_options', on_delete=models.CASCADE)
 	events = models.ManyToManyField(ProcessEvent)
 	result_url = models.URLField(null=True, blank=True)
 	

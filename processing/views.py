@@ -1,10 +1,10 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, filters
 from rest_framework.response import Response
 from django.core.exceptions import ObjectDoesNotExist
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
-from kafka import KafkaProducer
 import json
+import requests
 from .models import (
     Camera,
     ActionType,
@@ -51,6 +51,20 @@ class ProcessEventViewSet(viewsets.ModelViewSet):
 class ProcessingViewSet(viewsets.ModelViewSet):
     queryset = Process.objects.all()
     serializer_class = ProcessSerializer
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['camera__id']
+
+    @swagger_auto_schema(manual_parameters=[
+        openapi.Parameter(
+            name='search',
+            in_=openapi.IN_QUERY,
+            description='Filter by camera ID',
+            type=openapi.TYPE_STRING,
+            required=False
+        )
+    ])
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
     def create(self, request):
         data = request.data
@@ -84,9 +98,6 @@ class ProcessingViewSet(viewsets.ModelViewSet):
 
             process.events.add(process_event)
 
-        producer = KafkaProducer(bootstrap_servers=['10.61.36.15:9092', '10.61.36.15:9093', '10.61.36.15:9094'],
-                                 value_serializer=lambda m: json.dumps(m).encode('utf-8')) 
-        
         cvmode = ComputerVisionModule.objects.filter(pk=data['cv_module_id']).first()
         camera = Camera.objects.filter(pk=data['camera_id']).first()
         print(cvmode, camera)
@@ -131,8 +142,9 @@ class ProcessingViewSet(viewsets.ModelViewSet):
 
         json_data = json.dumps(data)
 
-        producer.send('cv_cons', json_data)
-
-        producer.flush()
-
-        return Response({'message': 'Process created successfully'}, status=status.HTTP_201_CREATED)
+        response = requests.post('http://10.61.36.18:4949/config', json=json_data)
+        
+        if response.status_code == 200:
+            return Response({'message': 'Process created successfully'}, status=status.HTTP_201_CREATED)
+        else:
+            return Response({'error': 'Failed to send data'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
