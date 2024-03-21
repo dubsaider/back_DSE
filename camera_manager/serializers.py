@@ -6,16 +6,16 @@ from .models import (
     CameraGroup,
     CameraToGroup
 )
-from processing.models import Process
+from processing.serializers import ProcessSerializer
 
 
 class CameraSerializer(serializers.ModelSerializer):
     raw_livestream = serializers.SerializerMethodField()
-    processed_livestream = serializers.SerializerMethodField()
+    processing_options = ProcessSerializer(many=True, read_only=True)
 
     class Meta:
         model = Camera
-        fields = ('id', 'camera_name', 'camera_ip', 'input_location', 'output_location', 'camera_description', 'camera_lon', 'camera_lat', 'is_active', 'raw_livestream', 'processed_livestream')
+        fields = ('id', 'camera_name', 'camera_ip', 'input_location', 'output_location', 'camera_description', 'camera_lon', 'camera_lat', 'is_active', 'raw_livestream', 'processing_options')
     
     def get_raw_livestream(self, obj):
         if obj.is_active:
@@ -25,8 +25,8 @@ class CameraSerializer(serializers.ModelSerializer):
         return None
 	
     def get_processed_livestream(self, obj):
-        processes = Process.objects.filter(camera=obj)
-        return [process.result_url for process in processes]
+        processing_options = obj.processing_options.all()
+        return [option for option in processing_options]
 
 class LocationSerializer(serializers.ModelSerializer):
      class Meta:
