@@ -4,6 +4,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 import json
+from kafka import KafkaProducer
 import requests
 from .models import (
     Camera,
@@ -71,7 +72,7 @@ class ProcessingViewSet(viewsets.ModelViewSet):
         process = Process.objects.create(
             cv_module_id=data['cv_module_id'],
             camera_id=data['camera_id'],
-            result_url='http://10.61.36.17:8888/processing_' + str(data['camera_id']) + '/' + str(data['cv_module_id'])
+            result_url='http://10.61.36.13:8888/processing_' + str(data['camera_id']) + '/' + str(data['cv_module_id']) + '/stream.m3u8' 
         )
         events_data = data['events']
         for event_data in events_data:
@@ -127,12 +128,12 @@ class ProcessingViewSet(viewsets.ModelViewSet):
                 {
                   "event_name": "all_frames",
                   "event_actions": [
-                    "box_drawing", "record", "rtsp_server_stream"
+                    "box_drawing", "rtsp_server_stream"
                   ],
                   "parameters": {
                     "FPS": 30,
                     "timer": 600,
-                    "host_port_rtsp_server": "10.61.36.17:8554",
+                    "host_port_rtsp_server": "10.61.36.13:8554",
                     "path_server_stream": f"processing_{data['camera_id']}/{data['cv_module_id']}"
                   }
                 }
@@ -140,11 +141,16 @@ class ProcessingViewSet(viewsets.ModelViewSet):
           }
         }
 
-        json_data = json.dumps(data)
+        producer = KafkaProducer(bootstrap_servers=['10.61.36.15:9092', '10.61.36.15:9093', '10.61.36.15:9094'],
+                            value_serializer=lambda m: json.dumps(m).encode('utf-8')) 
+        producer.send('cv_cons', data)
 
-        response = requests.post('http://10.61.36.18:4949/config', json=json_data)
+        producer.flush()
+        # json_data = json.dumps(data)
+
+        # response = requests.post('http://10.61.36.18:4949/config', json=json_data)
         
-        if response.status_code == 200:
-            return Response({'message': 'Process created successfully'}, status=status.HTTP_201_CREATED)
-        else:
-            return Response({'error': 'Failed to send data'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        # if response.status_code == 200:
+        return Response({'message': 'Process created successfully'}, status=status.HTTP_201_CREATED)
+        # else:
+        #     return Response({'error': 'Failed to send data'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

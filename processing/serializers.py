@@ -47,7 +47,8 @@ class ProcessEventSerializer(serializers.ModelSerializer):
 class ProcessSerializer(serializers.ModelSerializer):
     events = ProcessEventSerializer(many=True)
     cv_module = ComputerVisionModuleSerializer()
+    camera_id = serializers.PrimaryKeyRelatedField(source='camera', read_only=True)
 
     class Meta:
         model = Process
-        fields = '__all__'
+        fields = ('cv_module', 'camera_id', 'events', 'result_url')

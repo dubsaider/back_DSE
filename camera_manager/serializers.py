@@ -11,11 +11,12 @@ from processing.serializers import ProcessSerializer
 
 class CameraSerializer(serializers.ModelSerializer):
     raw_livestream = serializers.SerializerMethodField()
+    raw_livestream_hls = serializers.SerializerMethodField()
     processing_options = ProcessSerializer(many=True, read_only=True)
 
     class Meta:
         model = Camera
-        fields = ('id', 'camera_name', 'camera_ip', 'input_location', 'output_location', 'camera_description', 'camera_lon', 'camera_lat', 'is_active', 'raw_livestream', 'processing_options')
+        fields = ('id', 'camera_name', 'camera_ip', 'input_location', 'output_location', 'camera_description', 'camera_lon', 'camera_lat', 'is_active', 'raw_livestream', 'raw_livestream_hls', 'processing_options')
     
     def get_raw_livestream(self, obj):
         if obj.is_active:
@@ -27,6 +28,11 @@ class CameraSerializer(serializers.ModelSerializer):
     def get_processed_livestream(self, obj):
         processing_options = obj.processing_options.all()
         return [option for option in processing_options]
+    
+    def get_raw_livestream_hls(self, obj):
+        if obj.is_active:
+            return f'http://10.61.36.15:8000/camera_manager/camera/{obj.id}/stream.m3u8'
+        return None
 
 class LocationSerializer(serializers.ModelSerializer):
      class Meta:
