@@ -1,7 +1,9 @@
-from django.db import models		
+from django.db import models	
+from django.db.models import JSONField	
 
 class Location(models.Model):
 	location = models.CharField(max_length=255)
+	coordinates = JSONField(default=list)
 
 	def __str__(self):
 		return self.location

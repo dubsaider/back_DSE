@@ -51,7 +51,7 @@ class LocationViewSet(viewsets.ModelViewSet):
     queryset = Location.objects.all()
     serializer_class = LocationSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,)
-    http_method_names = ['get']
+    http_method_names = ['get', 'post']
 
 class GroupTypeViewSet(viewsets.ModelViewSet):
     queryset = GroupType.objects.all()
@@ -110,8 +110,8 @@ ACTIVE_STREAMS = {}
 
 def start_stream(ip, hls_output_dir, pk):
     stream_output_dir = os.path.join(hls_output_dir, 'stream.m3u8')
-    video = ffmpeg_streaming.input(f'rtsp://admin:bvrn2022@{ip}:554/ISAPI/Streaming/Channels/101')
-    hls_stream = video.hls(ffmpeg_streaming.Formats.h264(), hls_list_size = 10)
+    video = ffmpeg_streaming.input(f'rtsp://admin:bvrn2022@{ip}:554/ISAPI/Streaming/Channels/101', hls_time=5, preset='ultrafast')
+    hls_stream = video.hls(ffmpeg_streaming.Formats.h264(), hls_list_size = 5)
     _720p = ffmpeg_streaming.Representation(ffmpeg_streaming.Size(1280, 720), ffmpeg_streaming.Bitrate(2048 * 1024, 320 * 1024))
     hls_stream.representations(_720p)
     hls_stream.flags('delete_segments')
