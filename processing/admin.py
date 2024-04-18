@@ -4,8 +4,11 @@ from camera_manager.models import Camera
 from kafka import KafkaProducer
 import json
 
-admin.site.register(ActionType)
 admin.site.register(EventType)
+
+@admin.register(ActionType)
+class ActionTypeAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'description', 'parameters')
 
 @admin.register(Model)
 class ModelAdmin(admin.ModelAdmin):
