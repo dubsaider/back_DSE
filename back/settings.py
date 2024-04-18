@@ -29,7 +29,12 @@ SECRET_KEY = 'django-insecure-lm#u*fk83_^mf1klt*nl-3hls$x8hc_aah8=z5yg_j)83fsvn8
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '0.0.0.0', '127.0.0.1', '10.61.31.19']
+KAFKA = ['10.61.36.15:9092', '10.61.36.15:9093', '10.61.36.15:9094']
+RTSP_SERVER = "10.61.36.17:8554"
+BACKEND = '10.61.31.19'
+MEDIA_MTX = '10.61.36.13'
+
+ALLOWED_HOSTS = ['localhost', '0.0.0.0', '127.0.0.1', BACKEND]
 
 PORT = 8000
 
@@ -192,3 +197,4 @@ SIMPLE_JWT = {
     "SLIDING_TOKEN_OBTAIN_SERIALIZER": "rest_framework_simplejwt.serializers.TokenObtainSlidingSerializer",
     "SLIDING_TOKEN_REFRESH_SERIALIZER": "rest_framework_simplejwt.serializers.TokenRefreshSlidingSerializer",
 }
+

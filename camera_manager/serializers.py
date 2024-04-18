@@ -7,7 +7,7 @@ from .models import (
     CameraToGroup
 )
 from processing.serializers import ProcessSerializer
-
+from back.settings import BACKEND, PORT
 
 class CameraSerializer(serializers.ModelSerializer):
     raw_livestream = serializers.SerializerMethodField()
@@ -31,7 +31,7 @@ class CameraSerializer(serializers.ModelSerializer):
     
     def get_raw_livestream_hls(self, obj):
         if obj.is_active:
-            return f'http://10.61.36.15:8000/camera_manager/camera/{obj.id}/stream.m3u8'
+            return f'http://{BACKEND}:{PORT}/camera_manager/camera/{obj.id}/stream.m3u8'
         return None
 
 class LocationSerializer(serializers.ModelSerializer):

@@ -4,6 +4,7 @@ import json
 from datetime import datetime
 from api.models import Incident, ZoneStat, CameraStat, Camera
 
+from back.settings import KAFKA
 
 class Command(BaseCommand):
     help = "Listens to Kafka topic and saves incoming messages to the database."
@@ -11,7 +12,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         consumer = KafkaConsumer(
             "cluster-logs",
-            bootstrap_servers=['10.61.36.15:9092', '10.61.36.15:9093', '10.61.36.15:9094'],
+            bootstrap_servers=KAFKA,
             auto_offset_reset="earliest",
             enable_auto_commit=True,
             value_deserializer=lambda x: json.loads(x.decode("utf-8")),

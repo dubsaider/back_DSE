@@ -4,6 +4,8 @@ from camera_manager.models import Camera
 from kafka import KafkaProducer
 import json
 
+from back.settings import KAFKA, RTSP_SERVER
+
 admin.site.register(EventType)
 
 @admin.register(ActionType)
@@ -31,9 +33,9 @@ class ProcessAdmin(admin.ModelAdmin):
     list_display = ('id', 'cv_module_id', 'camera_id', 'result_url')
     
     def save_model(self, request, obj, form, change):
-        obj.result_url = f'http://10.61.36.15:8888/processing_{obj.camera_id.id}/{obj.cv_module_id.id}'
+        # obj.result_url = f'http://10.61.36.15:8888/processing_{obj.camera_id.id}/{obj.cv_module_id.id}'
 
-        producer = KafkaProducer(bootstrap_servers=['10.61.36.15:9092', '10.61.36.15:9093', '10.61.36.15:9094'],
+        producer = KafkaProducer(bootstrap_servers=KAFKA,
                                  value_serializer=lambda m: json.dumps(m).encode('utf-8')) 
         
         cvmode = ComputerVisionModule.objects.filter(pk=data['cv_module_id']).first()
@@ -60,7 +62,7 @@ class ProcessAdmin(admin.ModelAdmin):
                   "parameters": {
                     "FPS": 30,
                     "timer": 600,
-                    "host_port_rtsp_server": "10.61.36.17:8554",
+                    "host_port_rtsp_server": RTSP_SERVER,
                     "path_server_stream": f"{data['camera_id']}/{data['cv_module_id']}"
                   }
                 }

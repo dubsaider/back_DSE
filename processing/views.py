@@ -25,6 +25,8 @@ from .serializers import (
     ActionTypeSerializer,
 )
 
+from back.settings import KAFKA, MEDIA_MTX
+
 class ActionTypeViewSet(viewsets.ModelViewSet):
     queryset = ActionType.objects.all()
     serializer_class = ActionTypeSerializer
@@ -69,10 +71,12 @@ class ProcessingViewSet(viewsets.ModelViewSet):
 
     def create(self, request):
         data = request.data
+        cv_module_id = data['cv_module_id']
+        camera_id = data['camera_id']
         process = Process.objects.create(
-            cv_module_id=data['cv_module_id'],
-            camera_id=data['camera_id'],
-            result_url='http://10.61.36.13:8888/processing_' + str(data['camera_id']) + '/' + str(data['cv_module_id']) + '/stream.m3u8' 
+            cv_module_id=cv_module_id,
+            camera_id=camera_id,
+            result_url=f'http://{MEDIA_MTX}:8888/processing_{camera_id}/{cv_module_id}/stream.m3u8' 
         )
         events_data = data['events']
         for event_data in events_data:
@@ -102,7 +106,7 @@ class ProcessingViewSet(viewsets.ModelViewSet):
         cvmode = ComputerVisionModule.objects.filter(pk=data['cv_module_id']).first()
         camera = Camera.objects.filter(pk=data['camera_id']).first()
         print(cvmode, camera)
-        data = {
+        kafka_msg = {
           "type": "create_process",
           "msg": {
             "parameters": {
@@ -114,36 +118,12 @@ class ProcessingViewSet(viewsets.ModelViewSet):
               "password": "bvrn2022",
               "scene_number": 1
             },
-            "events": [
-                {
-                    "event_name": "check_any_object",
-                    "event_actions": [
-                        "line_count", "logging"
-                    ],
-                    "parameters": {
-                            "lines": {
-                                "line0": [[1200, 900], [1500, 900]]}
-                        }
-                },
-                {
-                  "event_name": "all_frames",
-                  "event_actions": [
-                    "box_drawing", "rtsp_server_stream"
-                  ],
-                  "parameters": {
-                    "FPS": 30,
-                    "timer": 600,
-                    "host_port_rtsp_server": "10.61.36.13:8554",
-                    "path_server_stream": f"processing_{data['camera_id']}/{data['cv_module_id']}"
-                  }
-                }
-            ]
+            "events": get_events(events_data)
           }
         }
-
-        producer = KafkaProducer(bootstrap_servers=['10.61.36.15:9092', '10.61.36.15:9093', '10.61.36.15:9094'],
+        producer = KafkaProducer(bootstrap_servers=KAFKA,
                             value_serializer=lambda m: json.dumps(m).encode('utf-8')) 
-        producer.send('cv_cons', data)
+        producer.send('cv_cons', kafka_msg)
 
         producer.flush()
         # json_data = json.dumps(data)
@@ -154,3 +134,26 @@ class ProcessingViewSet(viewsets.ModelViewSet):
         return Response({'message': 'Process created successfully'}, status=status.HTTP_201_CREATED)
         # else:
         #     return Response({'error': 'Failed to send data'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+def get_events(events_data):
+    event_list = []
+    for event_data in events_data:
+        try:
+            event_type = EventType.objects.get(id=event_data['event_type_id'])
+        except ObjectDoesNotExist:
+            return Response({'error': 'EventType not found'}, status=status.HTTP_400_BAD_REQUEST)
+
+        actions_data = event_data['actions']
+        for action_data in actions_data:
+            try:
+                action_type = ActionType.objects.get(id=action_data['action_type_id'])
+            except ObjectDoesNotExist:
+                return Response({'error': 'ActionType not found'}, status=status.HTTP_400_BAD_REQUEST)
+
+            events = {"event_name": event_type.name, "event_actions": action_type.name, "parameters": action_data['parameters']}
+            event_list.append(events)
+
+    return event_list
+
+
+        
