@@ -1,6 +1,6 @@
 from django.db import models
 from camera_manager.models import Camera
-
+from django.contrib.postgres.fields import ArrayField
 
 class Model(models.Model):
 	model_name = models.CharField(max_length=255)
@@ -18,7 +18,8 @@ class ComputerVisionModule(models.Model):
 class ActionType(models.Model):
   name = models.CharField(max_length=255)
   description = models.CharField(max_length=255, null=True, default=None)
-
+  parameters = ArrayField(models.CharField(max_length=200), default=list)
+  
   def __str__(self):
       return self.name
 
