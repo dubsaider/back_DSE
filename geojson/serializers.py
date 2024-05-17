@@ -1,4 +1,7 @@
 from rest_framework import serializers
+from.models import JsonFile
 
-class GeoJSONSerializer(serializers.Serializer):
-    data = serializers.JSONField(help_text="GeoJSON data")
+class FileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = JsonFile
+        fields = ['id', 'file']

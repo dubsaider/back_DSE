@@ -1,6 +1,6 @@
 from django.urls import path
-from .views import GeoJSONView
+from .views import UploadJsonFileView
 
 urlpatterns = [
-    path('', GeoJSONView.as_view(), name='geojson')
+    path('', UploadJsonFileView.as_view(), name='geojson')
 ]
