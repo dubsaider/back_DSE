@@ -37,3 +37,5 @@ vid/
 cameras/
 
 debug_cron.log
+
+.json_files/
