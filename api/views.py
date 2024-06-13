@@ -98,7 +98,7 @@ class IncidentViewSet(viewsets.ModelViewSet):
     pagination_class = CustomPageNumberPagination
 
     def get_queryset(self):
-        queryset = Incident.objects.all()
+        queryset = Incident.objects.all().order_by('-start_timestamp')
         camera_id = self.request.query_params.get('camera_id', None)
         if camera_id is not None:
             camera = get_object_or_404(Camera, id=camera_id)

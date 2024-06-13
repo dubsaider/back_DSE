@@ -3,16 +3,27 @@ from camera_manager.models import (
 	Location,
     Camera,
 )
+from django.contrib.auth.models import User
+
 
 class IncidentType(models.Model):
     name = models.CharField(max_length=255)
     description = models.CharField(max_length=255, null=True, default=None)
 
 class Incident(models.Model):
-   timestamp = models.DateTimeField(auto_now_add=True)
-   camera = models.ForeignKey(Camera, on_delete=models.CASCADE)
-   incident_type = models.ForeignKey(IncidentType, on_delete=models.CASCADE)
-   link = models.URLField(blank=True, default=None)
+    STATUS_CHOICES = [
+        ('new', 'Новый'),
+        ('in_progress', 'В обработке'),
+        ('closed', 'Закрыто'),
+    ]
+   
+    start_timestamp = models.DateTimeField(auto_now_add=True)
+    end_timestamp = models.DateTimeField(default=None, null=True, blank=True)
+    camera = models.ForeignKey(Camera, on_delete=models.CASCADE)
+    incident_type = models.ForeignKey(IncidentType, on_delete=models.CASCADE)
+    link = models.URLField(blank=True, default=None)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='new')
+    operator = models.ForeignKey(User, on_delete=models.CASCADE, related_name='incidents', default=1)
 
 class ZoneStat(models.Model):
    timestamp = models.DateTimeField()

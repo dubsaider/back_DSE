@@ -9,7 +9,14 @@ from .models import (
 from processing.serializers import ProcessSerializer
 from back.settings import BACKEND, PORT
 
+class LocationSerializer(serializers.ModelSerializer):
+     class Meta:
+        model = Location
+        fields = '__all__'
+
 class CameraSerializer(serializers.ModelSerializer):
+    input_location = LocationSerializer()
+    output_location = LocationSerializer()
     raw_livestream = serializers.SerializerMethodField()
     raw_livestream_hls = serializers.SerializerMethodField()
     processing_options = ProcessSerializer(many=True, read_only=True)
@@ -33,11 +40,6 @@ class CameraSerializer(serializers.ModelSerializer):
         if obj.is_active:
             return f'http://{BACKEND}:{PORT}/camera_manager/camera/{obj.id}/stream.m3u8'
         return None
-
-class LocationSerializer(serializers.ModelSerializer):
-     class Meta:
-        model = Location
-        fields = '__all__'
 
 class GroupTypeSerializer(serializers.ModelSerializer):
     class Meta:

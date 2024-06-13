@@ -10,7 +10,6 @@ from camera_manager.serializers import (
     LocationSerializer,
 )
 
-
 class IncidentTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = IncidentType
@@ -19,10 +18,11 @@ class IncidentTypeSerializer(serializers.ModelSerializer):
 class IncidentSerializer(serializers.ModelSerializer):
    camera = CameraSerializer()
    incident_type = IncidentTypeSerializer()
+#    operator = UserSerializer()
 
    class Meta:
        model = Incident
-       fields = ['timestamp', 'camera', 'incident_type', 'link']
+       fields = '__all__'
 
 class ZoneStatSerializer(serializers.ModelSerializer):
    location = LocationSerializer()
