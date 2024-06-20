@@ -136,12 +136,16 @@ class ProcessingViewSet(viewsets.ModelViewSet):
         #     return Response({'error': 'Failed to send data'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
 def get_events(events_data):
-    event_list = []
+    event_dict = {}
     for event_data in events_data:
         try:
             event_type = EventType.objects.get(id=event_data['event_type_id'])
         except ObjectDoesNotExist:
             return Response({'error': 'EventType not found'}, status=status.HTTP_400_BAD_REQUEST)
+
+        event_name = event_type.name
+        if event_name not in event_dict:
+            event_dict[event_name] = {"event_actions": [], "parameters": {}}
 
         actions_data = event_data['actions']
         for action_data in actions_data:
@@ -150,10 +154,16 @@ def get_events(events_data):
             except ObjectDoesNotExist:
                 return Response({'error': 'ActionType not found'}, status=status.HTTP_400_BAD_REQUEST)
 
-            events = {"event_name": event_type.name, "event_actions": action_type.name, "parameters": action_data['parameters']}
-            event_list.append(events)
+            action_name = action_type.name
+            if action_name not in event_dict[event_name]["event_actions"]:
+                event_dict[event_name]["event_actions"].append(action_name)
 
+            parameters = action_data['parameters']
+            for key, value in parameters.items():
+                if key not in event_dict[event_name]["parameters"]:
+                    event_dict[event_name]["parameters"][key] = value
+
+    event_list = [{"event_name": event_name, **details} for event_name, details in event_dict.items()]
     return event_list
-
 
         
