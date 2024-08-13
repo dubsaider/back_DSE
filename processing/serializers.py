@@ -51,4 +51,4 @@ class ProcessSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Process
-        fields = ('cv_module', 'camera_id', 'events', 'result_url')
+        fields = ('id', 'cv_module', 'camera_id', 'events', 'result_url')

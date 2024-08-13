@@ -6,6 +6,7 @@ from drf_yasg.utils import swagger_auto_schema
 import json
 from kafka import KafkaProducer
 import requests
+import uuid
 from .models import (
     Camera,
     ActionType,
@@ -71,12 +72,14 @@ class ProcessingViewSet(viewsets.ModelViewSet):
 
     def create(self, request):
         data = request.data
+        process_uuid = uuid.uuid4().hex
+        print(process_uuid)
         cv_module_id = data['cv_module_id']
         camera_id = data['camera_id']
         process = Process.objects.create(
             cv_module_id=cv_module_id,
             camera_id=camera_id,
-            result_url=f'http://{MEDIA_MTX}:8888/processing_{camera_id}/{cv_module_id}/stream.m3u8' 
+            result_url=f'http://{MEDIA_MTX}:8888/{process_uuid}/stream.m3u8' 
         )
         events_data = data['events']
         for event_data in events_data:
@@ -105,9 +108,10 @@ class ProcessingViewSet(viewsets.ModelViewSet):
 
         cvmode = ComputerVisionModule.objects.filter(pk=data['cv_module_id']).first()
         camera = Camera.objects.filter(pk=data['camera_id']).first()
-        print(cvmode, camera)
+        
         kafka_msg = {
           "type": "create_process",
+          "cv_process_code": process_uuid,
           "msg": {
             "parameters": {
               "cvmode": f"{cvmode.cv_modules_name}",
@@ -118,24 +122,26 @@ class ProcessingViewSet(viewsets.ModelViewSet):
               "password": "bvrn2022",
               "scene_number": 1
             },
-            "events": get_events(events_data)
+            "events": get_events(events_data, process_uuid)
           }
         }
-        producer = KafkaProducer(bootstrap_servers=KAFKA,
-                            value_serializer=lambda m: json.dumps(m).encode('utf-8')) 
-        producer.send('cv_cons', kafka_msg)
+        # producer = KafkaProducer(bootstrap_servers=KAFKA,
+        #                     value_serializer=lambda m: json.dumps(m).encode('utf-8')) 
+        # producer.send('cv_cons', kafka_msg)
 
-        producer.flush()
-        # json_data = json.dumps(data)
+        # producer.flush()
+        json_data = json.dumps(kafka_msg)
 
-        # response = requests.post('http://10.61.36.18:4949/config', json=json_data)
-        
+        response = requests.post('http://10.61.31.22:30181/create', json=json_data)
+        print(response, json_data)
         # if response.status_code == 200:
         return Response({'message': 'Process created successfully'}, status=status.HTTP_201_CREATED)
         # else:
         #     return Response({'error': 'Failed to send data'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
         
-def get_events(events_data):
+        
+def get_events(events_data, process_uuid):
     event_dict = {}
     for event_data in events_data:
         try:
@@ -146,7 +152,8 @@ def get_events(events_data):
         event_name = event_type.name
         if event_name not in event_dict:
             event_dict[event_name] = {"event_actions": [], "parameters": {}}
-
+        event_dict['all_frames']['parameters']['host_port_rtsp_server'] = '10.61.31.18:8554'
+        event_dict['all_frames']['parameters']['path_server_stream'] = f'{process_uuid}'
         actions_data = event_data['actions']
         for action_data in actions_data:
             try:
