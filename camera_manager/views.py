@@ -147,6 +147,7 @@ def prepeare_camera(mycam):
 
     media = mycam.create_media_service()
 
+
     media_profile = media.GetProfiles()[0]
 
     request = ptz.create_type('GetConfigurationOptions')
@@ -164,62 +165,82 @@ def prepeare_camera(mycam):
             moverequest.Speed = ptz.GetStatus(
                 {'ProfileToken': media_profile.token}).Position
     return moverequest
+
             
 
+
+        
 class HikvisionCameraZoomViewSet(viewsets.ViewSet):
     @swagger_auto_schema(manual_parameters=[
-        openapi.Parameter('camera_id', openapi.IN_QUERY, description="id of controlled camera", type=openapi.TYPE_INTEGER),
-        openapi.Parameter('zoom_in', openapi.IN_QUERY, description="if True - camera will zoom in. It will zoom out otherwise", type=openapi.TYPE_BOOLEAN),
+        openapi.Parameter('camera_id', openapi.IN_QUERY, description="ID of controlled camera", type=openapi.TYPE_INTEGER),
+        openapi.Parameter('zoom_in', openapi.IN_QUERY, description="If True - camera will zoom in. It will zoom out otherwise", type=openapi.TYPE_BOOLEAN),
+        openapi.Parameter('speed', openapi.IN_QUERY, description="ms", type=openapi.TYPE_NUMBER, format = openapi.FORMAT_FLOAT)
     ])
-
-    def create(self, request):
-        camera_id = request.query_params['camera_id']
-        zoom_in = request.query_params['zoom_in']
-
+    def list(self, request):
+        camera_id = request.query_params.get('camera_id')
+        zoom_in = request.query_params.get('zoom_in') == 'true'
+        speed = request.query_params.get('speed')
+        speed = float(speed) if speed else 0.1
         camera = Camera.objects.get(id=camera_id)
     
         mycam = ONVIFCamera(camera.camera_ip, 80, 'admin', 'bvrn2022')
-        moverequest = prepeare_camera(mycam=mycam)
+ 
+        moverequest = prepeare_camera(mycam)
         
         moverequest.Translation.PanTilt.x = 0
         moverequest.Translation.PanTilt.y = 0
         moverequest.Translation.Zoom = 0
         if zoom_in:
-            moverequest.Translation.Zoom = 0.003
+            moverequest.Translation.Zoom = speed
         else:
-            moverequest.Translation.Zoom = -0.003
+            moverequest.Translation.Zoom = -speed
         
         mycam.ptz.RelativeMove(moverequest)
-        return Response({'message': 'Camera zoomed in'})
+        return Response({'message': 'Camera zoom adjusted'})
+
+
+
+
+
+
+
 
 class HikvisionCameraPositionViewSet(viewsets.ViewSet):
-    @swagger_auto_schema(manual_parameters=[
-        openapi.Parameter('camera_id', openapi.IN_QUERY, description="id of controlled camera", type=openapi.TYPE_INTEGER),
-        openapi.Parameter('direction', openapi.IN_QUERY, description="LEFT, RIGHT, UP, DOWN", type=openapi.TYPE_STRING),
-    ])
 
-    def create(self, request):
-        camera_id = request.query_params['camera_id']
-        direction = request.query_params['direction']
+
+    @swagger_auto_schema(manual_parameters=[
+        openapi.Parameter('camera_id', openapi.IN_QUERY, description="ID of controlled camera", type=openapi.TYPE_INTEGER),
+        openapi.Parameter('direction', openapi.IN_QUERY, description="LEFT, RIGHT, UP, DOWN", type=openapi.TYPE_STRING),
+        openapi.Parameter('speed', openapi.IN_QUERY, description="ms", type=openapi.TYPE_NUMBER, format = openapi.FORMAT_FLOAT)
+    ])
+    def list(self, request):
+        camera_id = request.query_params.get('camera_id')
+        direction = request.query_params.get('direction')
+        speed = request.query_params.get('speed')
+        if not camera_id or not direction:
+            return Response({'detail': 'camera_id and direction are required'}, status=400)
+        speed = float(speed) if speed else 0.005
+
         mycam = Camera.objects.get(id=camera_id)
-    
         mycam = ONVIFCamera(mycam.camera_ip, 80, 'admin', 'bvrn2022')
 
-        moverequest = prepeare_camera(mycam=mycam)
+        moverequest = prepeare_camera(mycam)
 
         moverequest.Translation.Zoom = 0
         moverequest.Translation.PanTilt.x = 0
         moverequest.Translation.PanTilt.y = 0
         if direction == "RIGHT":
-            moverequest.Translation.PanTilt.x = 0.003
+            moverequest.Translation.PanTilt.x = speed
         elif direction == "LEFT":
-            moverequest.Translation.PanTilt.x = -0.003
+            moverequest.Translation.PanTilt.x = -speed
         elif direction == "UP":
-            moverequest.Translation.PanTilt.y = 0.003
+            moverequest.Translation.PanTilt.y = speed
         elif direction == "DOWN":
-            moverequest.Translation.PanTilt.y = -0.003
+            moverequest.Translation.PanTilt.y = -speed
         
         mycam.ptz.RelativeMove(moverequest)
 
         return Response({'message': 'Camera moved'})
-    
+
+
+
