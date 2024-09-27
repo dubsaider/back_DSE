@@ -24,6 +24,7 @@ class Incident(models.Model):
     link = models.URLField(blank=True, default=None)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='new')
     operator = models.ForeignKey(User, on_delete=models.CASCADE, related_name='incidents', default=1)
+    is_system = models.BooleanField(default=True)
 
 class ZoneStat(models.Model):
    timestamp = models.DateTimeField()

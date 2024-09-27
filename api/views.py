@@ -115,6 +115,11 @@ class IncidentViewSet(viewsets.ModelViewSet):
         if incident_type is not None:
             queryset = queryset.filter(incident_type=incident_type)
 
+        is_system = self.request.query_params.get('is_system', None)
+        if is_system is not None:
+            queryset = queryset.filter(is_system=is_system)
+        else:
+            queryset = queryset.filter(is_system=False)   
         return queryset
     
     @swagger_auto_schema(
