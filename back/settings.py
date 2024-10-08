@@ -39,11 +39,11 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
     'rest_framework_swagger',
+    'rest_framework_simplejwt',
     'drf_yasg',
     'camera_manager',
     'processing',
     'api',
-    'rest_framework_simplejwt',
     'geojson',
 ]
 
