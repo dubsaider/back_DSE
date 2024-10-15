@@ -10,7 +10,7 @@ from .models import (
 
 @admin.register(Camera)
 class CameraAdmin(admin.ModelAdmin):
-    list_display = ('id', 'camera_name', 'camera_ip', 'is_active', 'camera_description', 'input_location', 'output_location', 'camera_lon', 'camera_lat')
+    list_display = ('id', 'camera_name', 'camera_ip', 'is_active', 'camera_description', 'input_location', 'camera_lon', 'camera_lat')
 
 @admin.register(Location)
 class LocationsAdmin(admin.ModelAdmin):
