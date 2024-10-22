@@ -7,11 +7,11 @@ class Location(models.Model):
 
 	def __str__(self):
 		return self.location
+	
 
 class Camera(models.Model):
     camera_name = models.CharField(max_length=255)
     camera_ip = models.CharField(max_length=15)
-    input_location = models.ForeignKey(Location, on_delete=models.CASCADE, related_name='input_location')
     camera_description = models.CharField(max_length=255, null=True, default='null')
     camera_lat = models.FloatField(default=0.0)
     camera_lon = models.FloatField(default=0.0)
@@ -27,6 +27,16 @@ class CameraTransition(models.Model):
 
     def __str__(self):
         return f"Transition from {self.from_camera.camera_name} to {self.to_camera.camera_name}"
+	
+class Stream(models.Model):
+	camera = models.ForeignKey(Camera, on_delete=models.CASCADE)
+	k8s_pod_name = models.CharField(max_length=255, null=True, blank=True)
+	k8s_pod_port = models.CharField(max_length=5, null=True, blank=True) 
+	status = models.CharField(max_length=50, default='pending')
+	created_at = models.DateTimeField(auto_now_add=True)
+	
+	def __str__(self):
+	    return f"Stream for {self.camera.camera_name}"
 	
 class GroupType(models.Model):
 	type_name = models.CharField(max_length=255)

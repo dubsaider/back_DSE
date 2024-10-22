@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import (
     Camera, 
+    Stream,
     Location,
     GroupType,
     CameraGroup,
@@ -15,31 +16,12 @@ class LocationSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class CameraSerializer(serializers.ModelSerializer):
-    input_location = LocationSerializer()
-    output_location = LocationSerializer()
-    raw_livestream = serializers.SerializerMethodField()
-    raw_livestream_hls = serializers.SerializerMethodField()
     processing_options = ProcessSerializer(many=True, read_only=True)
 
     class Meta:
         model = Camera
-        fields = ('id', 'camera_name', 'camera_ip', 'input_location', 'output_location', 'camera_description', 'camera_lon', 'camera_lat', 'is_active', 'raw_livestream', 'raw_livestream_hls', 'processing_options')
+        fields = ('id', 'camera_name', 'camera_ip', 'camera_description', 'camera_lon', 'camera_lat', 'is_active', 'processing_options')
     
-    def get_raw_livestream(self, obj):
-        if obj.is_active:
-            login = 'admin'
-            password = 'bvrn2022'
-            return f'rtsp://{login}:{password}@{obj.camera_ip}:554/ISAPI/Streaming/Channels/101'
-        return None
-	
-    def get_processed_livestream(self, obj):
-        processing_options = obj.processing_options.all()
-        return [option for option in processing_options]
-    
-    def get_raw_livestream_hls(self, obj):
-        if obj.is_active:
-            return f'http://{BACKEND}:{PORT}/camera_manager/camera/{obj.id}/stream.m3u8'
-        return None
 
 class GroupTypeSerializer(serializers.ModelSerializer):
     class Meta:
@@ -63,3 +45,18 @@ class CameraToGroupSerializer(serializers.ModelSerializer):
     class Meta:
         model = CameraToGroup
         fields = '__all__'
+
+class StreamSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Stream
+        fields = '__all__'
+
+    def get_stream_url(self, obj):
+        if obj.k8s_pod_name and obj.k8s_pod_port:
+            return f"http://{obj.k8s_pod_name}:{obj.k8s_pod_port}/convert_to_hls/streams/{obj.camera.id}/stream.m3u8"
+        return None
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['stream_url'] = self.get_stream_url(instance)
+        return representation

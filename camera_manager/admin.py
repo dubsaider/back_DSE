@@ -5,12 +5,13 @@ from .models import (
     GroupType,
     CameraGroup,
     CameraToGroup,
+    Stream,
 )
 
 
 @admin.register(Camera)
 class CameraAdmin(admin.ModelAdmin):
-    list_display = ('id', 'camera_name', 'camera_ip', 'is_active', 'camera_description', 'input_location', 'camera_lon', 'camera_lat')
+    list_display = ('id', 'camera_name', 'camera_ip', 'is_active', 'camera_description', 'camera_lon', 'camera_lat')
 
 @admin.register(Location)
 class LocationsAdmin(admin.ModelAdmin):
@@ -23,3 +24,5 @@ admin.site.register(Location, LocationsAdmin)
 admin.site.register(GroupType)
 admin.site.register(CameraGroup)
 admin.site.register(CameraToGroup)
+admin.site.register(Stream)
+
