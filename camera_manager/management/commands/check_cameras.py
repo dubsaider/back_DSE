@@ -80,7 +80,7 @@ class Command(BaseCommand):
             logger.error('IncidentType does not exist: {}'.format(e))
             return
 
-        k8s_api = self.initialize_k8s_api()
+        k8s_api = initialize_k8s_api()
 
         cameras = await sync_to_async(list)(Camera.objects.all())
         async with aiohttp.ClientSession() as session:
