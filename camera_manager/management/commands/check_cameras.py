@@ -6,6 +6,7 @@ import asyncio
 import logging
 from asgiref.sync import sync_to_async
 from kubernetes import client, config
+from utils.k8s_utils import initialize_k8s_api
 import base64
 
 logger = logging.getLogger(__name__)
@@ -15,21 +16,6 @@ class Command(BaseCommand):
 
     def get_incident_type(self, is_active):
         return IncidentType.objects.get(name='Изменение статуса камеры на "Активный"') if is_active else IncidentType.objects.get(name='Изменение статуса камеры на "Неактивный"')
-
-    async def initialize_k8s_api(self):
-        user_cert_file = 'user.crt' 
-        user_key_file = 'user.key' 
-        ca_cert_file = 'ca.crt' 
-        api_server_url = 'https://k8smaster.dvfu.ru:6443' 
-
-        configuration = client.Configuration()
-        configuration.host = api_server_url
-        configuration.verify_ssl = True
-        configuration.ssl_ca_cert = ca_cert_file
-        configuration.cert_file = user_cert_file
-        configuration.key_file = user_key_file
-        
-        return client.CoreV1Api(client.ApiClient(configuration))
 
     async def get_secrets(self, k8s_api, secret_name, namespace='default'):
         try:
@@ -94,7 +80,7 @@ class Command(BaseCommand):
             logger.error('IncidentType does not exist: {}'.format(e))
             return
 
-        k8s_api = await self.initialize_k8s_api()
+        k8s_api = self.initialize_k8s_api()
 
         cameras = await sync_to_async(list)(Camera.objects.all())
         async with aiohttp.ClientSession() as session:
