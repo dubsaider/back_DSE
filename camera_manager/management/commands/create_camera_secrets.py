@@ -9,7 +9,7 @@ class Command(BaseCommand):
         user_cert_file = 'user.crt' 
         user_key_file = 'user.key' 
         ca_cert_file = 'ca.crt' 
-        api_server_url = 'https://k8smaster:6443' 
+        api_server_url = 'https://k8smaster.dvfu.ru:6443' # change url
 
         configuration = client.Configuration()
         configuration.host = api_server_url
@@ -27,7 +27,7 @@ class Command(BaseCommand):
             secret_data = {
                 "camera_name": camera.camera_name,
                 "camera_ip": camera.camera_ip,
-                "username": "login", # change login
+                "username": "username", # change login
                 "password": "password" # change password
             }
 
