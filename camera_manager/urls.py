@@ -1,7 +1,8 @@
 from django.urls import path, include
 from rest_framework import routers
 from .views import (
-    CameraViewSet, 
+    CameraViewSet,
+    StreamViewSet,
     LocationViewSet, 
     GroupTypeViewSet, 
     CameraGroupViewSet, 
@@ -12,6 +13,7 @@ from .views import (
 
 router = routers.DefaultRouter()
 router.register('cameras', CameraViewSet, basename='cameras-viewset')
+router.register('stream', StreamViewSet, basename='stream-viewset')
 router.register('locations', LocationViewSet, basename='locations-viewset')
 router.register('group-type', GroupTypeViewSet ,basename='group-type-viewset')
 router.register('camera-group', CameraGroupViewSet ,basename='camera-group-viewset')

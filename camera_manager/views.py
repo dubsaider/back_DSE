@@ -2,18 +2,19 @@
 from django.http import HttpResponseNotFound
 from rest_framework import viewsets
 from rest_framework.response import Response
-from rest_framework.decorators import action
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from .models import (
-    Camera, 
+    Camera,
+    Stream,
     Location,
     GroupType,
     CameraGroup,
     CameraToGroup,
 )
 from .serializers import (
-    CameraSerializer, 
+    CameraSerializer,
+    StreamSerializer,
     LocationSerializer,
     GroupTypeSerializer,
     CameraGroupSerializer,
@@ -47,6 +48,10 @@ class CameraViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(pk__in=queryset_filter.values('camera_id'))
         serializer = CameraSerializer(queryset, many=True)
         return Response(serializer.data)
+    
+class StreamViewSet(viewsets.ModelViewSet):
+    queryset = Stream.objects.all()
+    serializer_class = StreamSerializer
 
 class LocationViewSet(viewsets.ModelViewSet):
     queryset = Location.objects.all()
