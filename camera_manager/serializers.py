@@ -8,7 +8,7 @@ from .models import (
     CameraToGroup
 )
 from processing.serializers import ProcessSerializer
-from back.settings import BACKEND, PORT
+from back.settings import K8S_ADDRESS
 
 class LocationSerializer(serializers.ModelSerializer):
      class Meta:
@@ -53,7 +53,7 @@ class StreamSerializer(serializers.ModelSerializer):
 
     def get_stream_url(self, obj):
         if obj.k8s_pod_name and obj.k8s_pod_port:
-            return f"http://{obj.k8s_pod_name}:{obj.k8s_pod_port}/convert_to_hls/streams/{obj.camera.id}/stream.m3u8"
+            return f"http://{K8S_ADDRESS}:{obj.k8s_pod_port}/convert_to_hls/streams/{obj.camera.id}/stream.m3u8"
         return None
 
     def to_representation(self, instance):
