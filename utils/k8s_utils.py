@@ -5,7 +5,7 @@ def initialize_k8s_api():
     user_cert_file = 'user.crt' 
     user_key_file = 'user.key' 
     ca_cert_file = 'ca.crt' 
-    api_server_url = 'https://{K8S_DOMAIN}:6443' 
+    api_server_url = f'https://{K8S_DOMAIN}:6443' 
 
     configuration = client.Configuration()
     configuration.host = api_server_url
