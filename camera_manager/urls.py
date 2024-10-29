@@ -3,15 +3,11 @@ from rest_framework import routers
 from .views import (
     CameraViewSet, 
     LocationViewSet, 
-    CameraViewSet, 
     GroupTypeViewSet, 
     CameraGroupViewSet, 
     CameraToGroupViewSet, 
     HikvisionCameraZoomViewSet,
     HikvisionCameraPositionViewSet,
-)
-from .views import ( 
-    get_camera_view, 
 )
 
 router = routers.DefaultRouter()
@@ -25,5 +21,4 @@ router.register('camera-zoom', HikvisionCameraZoomViewSet, basename='camera-zoom
 
 urlpatterns = [
     path('', include(router.urls)),
-    path('camera/<int:pk>/<str:filename>', get_camera_view, name='get_camera'),
 ]

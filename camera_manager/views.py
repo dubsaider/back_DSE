@@ -1,31 +1,32 @@
-from django.shortcuts import render
-import os
-from pathlib import Path
-import ffmpeg_streaming
-from onvif import ONVIFCamera
-from django.http import HttpResponse, HttpResponseNotFound
+
+from django.http import HttpResponseNotFound
 from rest_framework import viewsets
 from rest_framework.response import Response
+from rest_framework.decorators import action
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from .models import (
-            Camera, 
-            Location,
-            GroupType,
-            CameraGroup,
-            CameraToGroup,
-        )
+    Camera, 
+    Location,
+    GroupType,
+    CameraGroup,
+    CameraToGroup,
+)
 from .serializers import (
-        CameraSerializer, 
-        LocationSerializer,
-        GroupTypeSerializer,
-        CameraGroupSerializer,
-        CameraToGroupSerializer,
-    )
+    CameraSerializer, 
+    LocationSerializer,
+    GroupTypeSerializer,
+    CameraGroupSerializer,
+    CameraToGroupSerializer,
+)
 from rest_framework.permissions import (
-        IsAuthenticated,
-        IsAuthenticatedOrReadOnly
-    )
+    IsAuthenticated,
+    IsAuthenticatedOrReadOnly
+)
+from onvif import ONVIFCamera
+import logging
+
+logger = logging.getLogger(__name__)
 
 class CameraViewSet(viewsets.ModelViewSet):
     serializer_class = CameraSerializer
@@ -106,48 +107,9 @@ class CameraToGroupViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticatedOrReadOnly,)
     serializer_class = CameraToGroupSerializer
 
-ACTIVE_STREAMS = {}
-
-def start_stream(ip, hls_output_dir, pk):
-    stream_output_dir = os.path.join(hls_output_dir, 'stream.m3u8')
-    video = ffmpeg_streaming.input(f'rtsp://admin:bvrn2022@{ip}:554/ISAPI/Streaming/Channels/101', hls_time=5, preset='ultrafast')
-    hls_stream = video.hls(ffmpeg_streaming.Formats.h264(), hls_list_size = 5)
-    _720p = ffmpeg_streaming.Representation(ffmpeg_streaming.Size(1280, 720), ffmpeg_streaming.Bitrate(2048 * 1024, 320 * 1024))
-    hls_stream.representations(_720p)
-    hls_stream.flags('delete_segments')
-    if not os.path.isfile(stream_output_dir):
-        hls_stream.output(f'cameras/camera_{pk}/stream.m3u8')
-    return hls_stream
-
-    
-def get_camera_view(request=None, pk=None, filename='stream.m3u8'):
-    
-    if not Camera.objects.filter(pk=pk).exists():
-        return HttpResponseNotFound()
-    
-    camera_ip = Camera.objects.filter(pk=pk).first().camera_ip
-    hls_output_dir = os.path.join(Path(__file__).resolve().parent.parent, 'cameras')
-    hls_output_dir = os.path.join(hls_output_dir, f'camera_{pk}')
-
-    if f'camera_{pk}' not in ACTIVE_STREAMS.keys():
-        if not os.path.exists(hls_output_dir):
-            os.makedirs(hls_output_dir)
-
-        ACTIVE_STREAMS[f'camera_{pk}'] = start_stream(camera_ip, hls_output_dir, pk)
-
-    playlist_path = os.path.join(hls_output_dir, filename)
-
-    with open(playlist_path, 'rb') as playlist_file:
-        response = HttpResponse(playlist_file.read(), content_type='application/vnd.apple.mpegurl')
-        return response
-
-
 def prepeare_camera(mycam):
     ptz = mycam.create_ptz_service()
-
     media = mycam.create_media_service()
-
-
     media_profile = media.GetProfiles()[0]
 
     request = ptz.create_type('GetConfigurationOptions')
@@ -166,15 +128,11 @@ def prepeare_camera(mycam):
                 {'ProfileToken': media_profile.token}).Position
     return moverequest
 
-            
-
-
-        
 class HikvisionCameraZoomViewSet(viewsets.ViewSet):
     @swagger_auto_schema(manual_parameters=[
         openapi.Parameter('camera_id', openapi.IN_QUERY, description="ID of controlled camera", type=openapi.TYPE_INTEGER),
         openapi.Parameter('zoom_in', openapi.IN_QUERY, description="If True - camera will zoom in. It will zoom out otherwise", type=openapi.TYPE_BOOLEAN),
-        openapi.Parameter('speed', openapi.IN_QUERY, description="ms", type=openapi.TYPE_NUMBER, format = openapi.FORMAT_FLOAT)
+        openapi.Parameter('speed', openapi.IN_QUERY, description="ms", type=openapi.TYPE_NUMBER, format=openapi.FORMAT_FLOAT)
     ])
     def list(self, request):
         camera_id = request.query_params.get('camera_id')
@@ -198,20 +156,11 @@ class HikvisionCameraZoomViewSet(viewsets.ViewSet):
         mycam.ptz.RelativeMove(moverequest)
         return Response({'message': 'Camera zoom adjusted'})
 
-
-
-
-
-
-
-
 class HikvisionCameraPositionViewSet(viewsets.ViewSet):
-
-
     @swagger_auto_schema(manual_parameters=[
         openapi.Parameter('camera_id', openapi.IN_QUERY, description="ID of controlled camera", type=openapi.TYPE_INTEGER),
         openapi.Parameter('direction', openapi.IN_QUERY, description="LEFT, RIGHT, UP, DOWN", type=openapi.TYPE_STRING),
-        openapi.Parameter('speed', openapi.IN_QUERY, description="ms", type=openapi.TYPE_NUMBER, format = openapi.FORMAT_FLOAT)
+        openapi.Parameter('speed', openapi.IN_QUERY, description="ms", type=openapi.TYPE_NUMBER, format=openapi.FORMAT_FLOAT)
     ])
     def list(self, request):
         camera_id = request.query_params.get('camera_id')
@@ -241,6 +190,3 @@ class HikvisionCameraPositionViewSet(viewsets.ViewSet):
         mycam.ptz.RelativeMove(moverequest)
 
         return Response({'message': 'Camera moved'})
-
-
-

@@ -23,7 +23,7 @@ RTSP_SERVER = config('RTSP_SERVER')
 BACKEND = config('BACKEND')
 MEDIA_MTX = config('MEDIA_MTX')
 
-ALLOWED_HOSTS = ['localhost', '0.0.0.0', '127.0.0.1', BACKEND]
+ALLOWED_HOSTS = ['*']
 
 PORT = 8000
 
