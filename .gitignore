@@ -44,3 +44,5 @@ json_files/
 
 incidents/
 .incidents/
+
+**/migrations/
