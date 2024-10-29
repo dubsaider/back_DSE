@@ -21,7 +21,6 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 KAFKA = config('KAFKA').split(',')
 RTSP_SERVER = config('RTSP_SERVER')
 BACKEND = config('BACKEND')
-MEDIA_MTX = config('MEDIA_MTX')
 
 ALLOWED_HOSTS = ['*']
 

@@ -33,8 +33,6 @@ class ProcessAdmin(admin.ModelAdmin):
     list_display = ('id', 'cv_module_id', 'camera_id')
     
     def save_model(self, request, obj, form, change):
-        # obj.result_url = f'http://10.61.36.15:8888/processing_{obj.camera_id.id}/{obj.cv_module_id.id}'
-
         producer = KafkaProducer(bootstrap_servers=KAFKA,
                                  value_serializer=lambda m: json.dumps(m).encode('utf-8')) 
         

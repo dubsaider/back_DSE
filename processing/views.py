@@ -26,7 +26,7 @@ from .serializers import (
     ActionTypeSerializer,
 )
 
-from back.settings import KAFKA, MEDIA_MTX
+from back.settings import KAFKA
 
 class ActionTypeViewSet(viewsets.ModelViewSet):
     queryset = ActionType.objects.all()
@@ -73,13 +73,11 @@ class ProcessingViewSet(viewsets.ModelViewSet):
     def create(self, request):
         data = request.data
         process_uuid = uuid.uuid4().hex
-        print(process_uuid)
         cv_module_id = data['cv_module_id']
         camera_id = data['camera_id']
         process = Process.objects.create(
             cv_module_id=cv_module_id,
             camera_id=camera_id,
-            result_url=f'http://{MEDIA_MTX}:8888/{process_uuid}/stream.m3u8' 
         )
         events_data = data['events']
         for event_data in events_data:
@@ -131,8 +129,8 @@ class ProcessingViewSet(viewsets.ModelViewSet):
 
         # producer.flush()
         json_data = json.dumps(kafka_msg)
-
-        response = requests.post('http://10.61.31.22:30181/create', json=json_data)
+        
+        response = requests.post('http://10.61.31.22:30181/create', json=json_data) #TODO clear ip
         print(response, json_data)
         # if response.status_code == 200:
         return Response({'message': 'Process created successfully'}, status=status.HTTP_201_CREATED)
@@ -152,7 +150,7 @@ def get_events(events_data, process_uuid):
         event_name = event_type.name
         if event_name not in event_dict:
             event_dict[event_name] = {"event_actions": [], "parameters": {}}
-        event_dict['all_frames']['parameters']['host_port_rtsp_server'] = '10.61.31.18:8554'
+        event_dict['all_frames']['parameters']['host_port_rtsp_server'] = '10.61.31.18:8554' #TODO clear ip
         event_dict['all_frames']['parameters']['path_server_stream'] = f'{process_uuid}'
         actions_data = event_data['actions']
         for action_data in actions_data:
