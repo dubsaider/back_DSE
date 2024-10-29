@@ -55,17 +55,20 @@ class Command(BaseCommand):
                     logger.warning(f'Camera check failed: {e}')
                     new_status = False
 
-        if status != new_status:
+        await self.update_camera_status(obj, ip, status, new_status)
+
+    async def update_camera_status(self, camera, ip, old_status, new_status):
+        if old_status != new_status:
             incident_type = self.incident_type_active if new_status else self.incident_type_inactive
             new_incident = Incident(
-                camera=obj,
+                camera=camera,
                 incident_type=incident_type,
                 link=""
             )
             await sync_to_async(new_incident.save)()
             logger.info(f'Camera {ip} status changed to {"Active" if new_status else "Inactive"}. Incident created.')
 
-            await sync_to_async(Camera.objects.filter(pk=obj.pk).update)(is_active=new_status)
+            await sync_to_async(Camera.objects.filter(pk=camera.pk).update)(is_active=new_status)
             logger.info(f'Camera {ip} status updated in the database.')
         else:
             logger.info(f'Camera {ip} status remains the same.')
