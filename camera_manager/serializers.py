@@ -22,6 +22,20 @@ class CameraSerializer(serializers.ModelSerializer):
         model = Camera
         fields = ('id', 'camera_name', 'camera_ip', 'camera_description', 'camera_lon', 'camera_lat', 'is_active', 'processing_options')
     
+    def get_stream_url(self, obj):
+        try:
+            stream = Stream.objects.get(camera_id=obj.id)
+            if stream.k8s_pod_name and stream.k8s_pod_port:
+                return f"http://{K8S_ADDRESS}:{stream.k8s_pod_port}/convert_to_hls/streams/{obj.id}/stream.m3u8"
+        except Stream.DoesNotExist:
+            pass
+        return None
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['stream_url'] = self.get_stream_url(instance)
+        return representation
+
 
 class GroupTypeSerializer(serializers.ModelSerializer):
     class Meta:
@@ -47,6 +61,8 @@ class CameraToGroupSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class StreamSerializer(serializers.ModelSerializer):
+    camera = CameraSerializer()
+
     class Meta:
         model = Stream
         fields = '__all__'
