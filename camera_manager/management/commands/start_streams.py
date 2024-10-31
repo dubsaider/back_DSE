@@ -74,7 +74,8 @@ class Command(BaseCommand):
                         {'name': 'CA_CERT', 'valueFrom': {'secretKeyRef': {'name': 'kuber-certs', 'key': 'ca-crt'}}},
                         {'name': 'USER_CERT', 'valueFrom': {'secretKeyRef': {'name': 'kuber-certs', 'key': 'user-crt'}}},
                         {'name': 'K8S_ADDRESS', 'value': K8S_ADDRESS},
-                        {'name': 'DEBUG', 'value': str(True)}
+                        {'name': 'DEBUG', 'value': str(True)},
+                        {'name': 'CORS_ORIGIN_ALLOW_ALL', 'value': str(True)}
                     ],
                     'ports': [
                         client.V1ContainerPort(
