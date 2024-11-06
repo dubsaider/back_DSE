@@ -6,6 +6,7 @@ from utils.k8s_utils import initialize_k8s_api
 from camera_manager.models import Camera, Stream
 import requests
 from back.settings import K8S_ADDRESS
+import asyncio
 
 logger = logging.getLogger(__name__)
 
@@ -23,14 +24,11 @@ class Command(BaseCommand):
         logger.info(f'Starting streams for up to {max_cameras} active cameras with {stream_per_node} streams per container...')
 
         k8s_api = initialize_k8s_api()
-
         cameras = self.get_active_cameras(max_cameras)
 
         self.create_pods_and_services(k8s_api, cameras, stream_per_node)
-
-        self.wait_for_pods_ready(k8s_api, cameras)
-
-        self.start_streams(k8s_api, cameras)
+        asyncio.run(self.wait_for_pods_ready(k8s_api, cameras))
+        asyncio.run(self.start_streams(k8s_api, cameras))
 
         logger.info('Successfully started streams for all active cameras')
 
@@ -40,22 +38,30 @@ class Command(BaseCommand):
     def create_pods_and_services(self, k8s_api, cameras, stream_per_node):
         for i in range(0, len(cameras), stream_per_node):
             camera_batch = cameras[i:i + stream_per_node]
-            try:
-                self.create_pod_and_service(k8s_api, camera_batch)
-            except Exception as e:
-                logger.error(f"Failed to create pod and service for camera batch: {e}")
+            self.create_pod_and_service_batch(k8s_api, camera_batch)
 
-    def create_pod_and_service(self, k8s_api, camera_batch):
+    def create_pod_and_service_batch(self, k8s_api, camera_batch):
         for camera in camera_batch:
             if not Stream.objects.filter(camera=camera).exists():
-                try:
-                    self.create_pod(k8s_api, camera)
-                    self.create_service(k8s_api, camera)
-                except Exception as e:
-                    logger.error(f"Failed to create pod and service for camera {camera.id}: {e}")
+                self.create_pod_and_service(k8s_api, camera)
+
+    def create_pod_and_service(self, k8s_api, camera):
+        try:
+            self.create_pod(k8s_api, camera)
+            self.create_service(k8s_api, camera)
+        except Exception as e:
+            logger.error(f"Failed to create pod and service for camera {camera.id}: {e}")
 
     def create_pod(self, k8s_api, camera):
-        pod_manifest = {
+        pod_manifest = self.get_pod_manifest(camera)
+        k8s_api.create_namespaced_pod(namespace='default', body=pod_manifest)
+
+    def create_service(self, k8s_api, camera):
+        service_manifest = self.get_service_manifest(camera)
+        k8s_api.create_namespaced_service(namespace='default', body=service_manifest)
+
+    def get_pod_manifest(self, camera):
+        return {
             'apiVersion': 'v1',
             'kind': 'Pod',
             'metadata': {
@@ -87,10 +93,9 @@ class Command(BaseCommand):
                 }]
             }
         }
-        k8s_api.create_namespaced_pod(namespace='default', body=pod_manifest)
 
-    def create_service(self, k8s_api, camera):
-        service_manifest = {
+    def get_service_manifest(self, camera):
+        return {
             'apiVersion': 'v1',
             'kind': 'Service',
             'metadata': {
@@ -115,29 +120,22 @@ class Command(BaseCommand):
                 'type': 'NodePort'
             }
         }
-        k8s_api.create_namespaced_service(namespace='default', body=service_manifest)
 
-    def wait_for_pods_ready(self, k8s_api, cameras):
-        for camera in cameras:
-            try:
-                self.wait_for_pod_ready(k8s_api, f"stream-{camera.id}")
-            except Exception as e:
-                logger.error(f"Failed to start pod for camera {camera.id}: {e}")
+    async def wait_for_pods_ready(self, k8s_api, cameras):
+        tasks = [self.wait_for_pod_ready(k8s_api, f"stream-{camera.id}") for camera in cameras]
+        await asyncio.gather(*tasks)
 
-    def wait_for_pod_ready(self, k8s_api, pod_name):
+    async def wait_for_pod_ready(self, k8s_api, pod_name):
         for _ in range(60):
-            pod = k8s_api.read_namespaced_pod(name=pod_name, namespace='default')
+            pod = await asyncio.to_thread(k8s_api.read_namespaced_pod, name=pod_name, namespace='default')
             if pod.status.phase == 'Running':
                 return
-            time.sleep(1)
+            await asyncio.sleep(1)
         raise Exception(f"Pod {pod_name} did not start in time.")
 
-    def start_streams(self, k8s_api, cameras):
-        for camera in cameras:
-            try:
-                self.start_stream_for_camera(k8s_api, camera)
-            except Exception as e:
-                logger.error(f"Failed to start stream for camera {camera.id}: {e}")
+    async def start_streams(self, k8s_api, cameras):
+        tasks = [asyncio.to_thread(self.start_stream_for_camera, k8s_api, camera) for camera in cameras]
+        await asyncio.gather(*tasks)
 
     def start_stream_for_camera(self, k8s_api, camera):
         if not Stream.objects.filter(camera=camera).exists():
