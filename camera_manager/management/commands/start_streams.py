@@ -13,8 +13,9 @@ class Command(BaseCommand):
     help = 'Start streams for all active cameras'
 
     def add_arguments(self, parser):
-        parser.add_argument('--max-cameras', type=int, default=10, help='Maximum number of cameras to start streams for')
-        parser.add_argument('--stream-per-node', type=int, default=1, help='Number of streams per container')
+        max_cameras = Camera.objects.filter(is_active=True).count()
+        parser.add_argument('--max_cameras', type=int, default=max_cameras, help='Maximum number of cameras to start streams for')
+        parser.add_argument('--stream_per_node', type=int, default=1, help='Number of streams per container')
 
     def handle(self, *args, **kwargs):
         max_cameras = kwargs['max_cameras']
@@ -154,10 +155,14 @@ class Command(BaseCommand):
             try:
                 service = k8s_api.read_namespaced_service(name=service_name, namespace='default')
                 node_port = service.spec.ports[0].node_port
-                self.start_stream(camera, node_port)
+                response_status = self.start_stream(camera, node_port)
+                if response_status != 200:
+                    self.delete_pod_and_service(k8s_api, f"stream-{camera.id}", service_name)
+                    return
                 Stream.objects.create(camera=camera, k8s_pod_name=f"stream-{camera.id}", k8s_pod_port=node_port)
             except Exception as e:
                 logger.error(f"Failed to start stream for camera {camera.id}: {e}")
+                self.delete_pod_and_service(k8s_api, f"stream-{camera.id}", service_name)
 
     def start_stream(self, camera, node_port):
         stream_url = f"http://{K8S_ADDRESS}:{node_port}/convert_to_hls/streams/{camera.id}/start/?ip={camera.camera_ip}&port=554&channel=101&resolution=720p"
@@ -165,3 +170,17 @@ class Command(BaseCommand):
         if response.status_code != 200:
             logger.error(f"Failed to start stream for camera {camera.id}: {response.text}")
             raise Exception(f"Failed to start stream for camera {camera.id}: {response.text}")
+        return response.status_code
+
+    def delete_pod_and_service(self, k8s_api, pod_name, service_name):
+        try:
+            k8s_api.delete_namespaced_pod(name=pod_name, namespace='default')
+            logger.info(f"Pod {pod_name} deleted successfully.")
+        except client.exceptions.ApiException as e:
+            logger.error(f"Failed to delete pod {pod_name}: {e}")
+
+        try:
+            k8s_api.delete_namespaced_service(name=service_name, namespace='default')
+            logger.info(f"Service {service_name} deleted successfully.")
+        except client.exceptions.ApiException as e:
+            logger.error(f"Failed to delete service {service_name}: {e}")
