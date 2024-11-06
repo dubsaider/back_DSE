@@ -1,4 +1,3 @@
-
 from django.http import HttpResponseNotFound
 from rest_framework import viewsets
 from rest_framework.response import Response
@@ -8,17 +7,13 @@ from .models import (
     Camera,
     Stream,
     Location,
-    GroupType,
     CameraGroup,
-    CameraToGroup,
 )
 from .serializers import (
     CameraSerializer,
     StreamSerializer,
     LocationSerializer,
-    GroupTypeSerializer,
     CameraGroupSerializer,
-    CameraToGroupSerializer,
 )
 from rest_framework.permissions import (
     IsAuthenticated,
@@ -37,15 +32,14 @@ class CameraViewSet(viewsets.ModelViewSet):
         return Camera.objects.all()
     
     @swagger_auto_schema(manual_parameters=[
-        openapi.Parameter('groups', openapi.IN_QUERY, description="Insert cameras into group", type=openapi.TYPE_ARRAY, items=openapi.Items(type=openapi.TYPE_INTEGER)),
+        openapi.Parameter('groups', openapi.IN_QUERY, description="Filter cameras by group", type=openapi.TYPE_ARRAY, items=openapi.Items(type=openapi.TYPE_INTEGER)),
     ])
     def list(self, request):
         queryset = self.get_queryset()
         groups = self.request.query_params.get('groups', None)
         if groups is not None:
             groups = groups.split(',')
-            queryset_filter = CameraToGroup.objects.filter(group_id__in=groups)
-            queryset = queryset.filter(pk__in=queryset_filter.values('camera_id'))
+            queryset = queryset.filter(camera_groups__in=groups)
         serializer = CameraSerializer(queryset, many=True)
         return Response(serializer.data)
     
@@ -59,17 +53,11 @@ class LocationViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticatedOrReadOnly,)
     http_method_names = ['get', 'post']
 
-class GroupTypeViewSet(viewsets.ModelViewSet):
-    queryset = GroupType.objects.all()
-    serializer_class = GroupTypeSerializer
-    permission_classes = (IsAuthenticatedOrReadOnly,)
-    http_method_names = ['get']
-
 class CameraGroupViewSet(viewsets.ModelViewSet):
     queryset = CameraGroup.objects.all()
     serializer_class = CameraGroupSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,)
-    http_method_names = ['get']
+    http_method_names = ['get', 'post', 'put', 'patch', 'delete']
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
@@ -77,42 +65,30 @@ class CameraGroupViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     @swagger_auto_schema(manual_parameters=[
-        openapi.Parameter('group_name', openapi.IN_QUERY, description="Insert cameras into group", type=openapi.TYPE_STRING),
-        openapi.Parameter('group_type', openapi.IN_QUERY, description="Insert cameras into group", type=openapi.TYPE_INTEGER),
-        openapi.Parameter('cameras', openapi.IN_QUERY, description="Insert cameras into group", type=openapi.TYPE_ARRAY, items=openapi.Items(type=openapi.TYPE_INTEGER)),
+        openapi.Parameter('group_name', openapi.IN_QUERY, description="Name of the group", type=openapi.TYPE_STRING),
+        openapi.Parameter('cameras', openapi.IN_QUERY, description="IDs of cameras to add to the group", type=openapi.TYPE_ARRAY, items=openapi.Items(type=openapi.TYPE_INTEGER)),
     ])
     def create(self, request):
         cameras = self.request.query_params.get('cameras', None)
         group_name = self.request.query_params.get('group_name', None)
-        group_type = self.request.query_params.get('group_type', None)
 
-        if group_name is None or group_type is None:
+        if group_name is None:
             return HttpResponseNotFound()
         
         group = CameraGroup.objects.create(
             group_name=group_name,
-            group_type=GroupType.objects.filter(pk=group_type).first()
         )
 
         if cameras is not None:
             cameras = cameras.split(',')
-            for camera in cameras:
-                camera_obj = Camera.objects.filter(pk=camera).first()
-                if camera_obj is None:
-                    continue
-                CameraToGroup.objects.create(
-                    group_id=group,
-                    camera_id=camera_obj,
-                )
-        # TODO: Add normal response in "Denis`s style"
+            for camera_id in cameras:
+                camera_obj = Camera.objects.filter(pk=camera_id).first()
+                if camera_obj is not None:
+                    group.cameras.add(camera_obj)
+
         return Response({"status": "success"})
 
-class CameraToGroupViewSet(viewsets.ModelViewSet):
-    queryset = CameraToGroup.objects.all()
-    permission_classes = (IsAuthenticatedOrReadOnly,)
-    serializer_class = CameraToGroupSerializer
-
-def prepeare_camera(mycam):
+def prepare_camera(mycam):
     ptz = mycam.create_ptz_service()
     media = mycam.create_media_service()
     media_profile = media.GetProfiles()[0]
@@ -148,7 +124,7 @@ class HikvisionCameraZoomViewSet(viewsets.ViewSet):
     
         mycam = ONVIFCamera(camera.camera_ip, 80, 'admin', 'bvrn2022')
  
-        moverequest = prepeare_camera(mycam)
+        moverequest = prepare_camera(mycam)
         
         moverequest.Translation.PanTilt.x = 0
         moverequest.Translation.PanTilt.y = 0
@@ -178,7 +154,7 @@ class HikvisionCameraPositionViewSet(viewsets.ViewSet):
         mycam = Camera.objects.get(id=camera_id)
         mycam = ONVIFCamera(mycam.camera_ip, 80, 'admin', 'bvrn2022')
 
-        moverequest = prepeare_camera(mycam)
+        moverequest = prepare_camera(mycam)
 
         moverequest.Translation.Zoom = 0
         moverequest.Translation.PanTilt.x = 0

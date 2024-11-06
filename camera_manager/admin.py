@@ -1,11 +1,9 @@
 from django.contrib import admin
 from .models import (
     Camera,
-    Location,
-    GroupType,
-    CameraGroup,
-    CameraToGroup,
     Stream,
+    Location,
+    CameraGroup,
 )
 from back.settings import K8S_ADDRESS
 
@@ -35,7 +33,5 @@ admin.site.unregister(Stream)
 admin.site.register(Stream, StreamAdmin)
 admin.site.unregister(Location)
 admin.site.register(Location, LocationsAdmin)
-admin.site.register(GroupType)
 admin.site.register(CameraGroup)
-admin.site.register(CameraToGroup)
 
