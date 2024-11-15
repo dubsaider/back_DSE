@@ -1,5 +1,9 @@
 from kubernetes import client, config
+import base64
 from back.settings import K8S_ADDRESS
+import logging
+
+logger = logging.getLogger(__name__)
 
 def initialize_k8s_api():
     user_cert_file = 'user.crt' 
@@ -15,3 +19,13 @@ def initialize_k8s_api():
     configuration.key_file = user_key_file
     
     return client.CoreV1Api(client.ApiClient(configuration))
+
+async def get_secrets(k8s_api, secret_name, namespace='default'):
+    try:
+        secret = k8s_api.read_namespaced_secret(name=secret_name, namespace=namespace)
+        login = base64.b64decode(secret.data.get('username')).decode('utf-8')
+        password = base64.b64decode(secret.data.get('password')).decode('utf-8')
+        return login, password
+    except client.exceptions.ApiException as e:
+        logger.error(f"[ERROR] Failed to retrieve secret {secret_name}: {e}")
+        return None, None
