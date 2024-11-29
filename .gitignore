@@ -49,3 +49,5 @@ incidents/
 
 *.crt
 *.key
+
+*.yaml
