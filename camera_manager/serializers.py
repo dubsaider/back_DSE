@@ -25,7 +25,7 @@ class CameraSerializer(serializers.ModelSerializer):
         try:
             stream = Stream.objects.get(camera_id=obj.id)
             if stream.k8s_pod_name and stream.k8s_pod_port:
-                return f"http://{K8S_ADDRESS}:{stream.k8s_pod_port}/convert_to_hls/streams/{obj.id}/stream.m3u8"
+                return f"http://{K8S_ADDRESS}:{stream.k8s_pod_port}/api/stream.m3u8?src=stream{obj.id}&mp4=flac"
         except Stream.DoesNotExist:
             pass
         return None
@@ -47,5 +47,5 @@ class StreamSerializer(serializers.ModelSerializer):
 
     def get_stream_url(self, obj):
         if obj.k8s_pod_name and obj.k8s_pod_port:
-            return f"http://{K8S_ADDRESS}:{obj.k8s_pod_port}/convert_to_hls/streams/{obj.camera.id}/stream.m3u8"
+            return f"http://{K8S_ADDRESS}:{obj.k8s_pod_port}/api/stream.m3u8?src=stream{obj.id}&mp4=flac"
         return None
