@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 from camera_manager.models import Camera, Stream
-from utils.k8s_utils import initialize_k8s_api, get_secrets
+from utils.k8s_utils import initialize_k8s_api
 import logging
 import subprocess
 import os

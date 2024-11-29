@@ -8,9 +8,9 @@ from .views import (
 )
 import os
 from django.urls import path
-from .models import Incident, Camera  # Импорт моделей для работы с базой данных
-from django.http import HttpResponseNotFound  # Импорт для возврата ответа NotFound
-from pathlib import Path  # Импорт для работы с путями файловой системы
+from .models import Incident
+from django.http import HttpResponseNotFound
+from pathlib import Path
 from django.conf import settings
 from django.http import HttpResponse, HttpResponseNotFound
 
