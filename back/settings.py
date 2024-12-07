@@ -13,7 +13,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, '')
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config('SECRET_KEY')
+SECRET_KEY = config('DJANGO_SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=False, cast=bool)
@@ -25,7 +25,7 @@ K8S_ADDRESS = config('K8S_ADDRESS')
 
 ALLOWED_HOSTS = ['*']
 
-PORT = config('PORT')
+PORT = config('DJANGO_PORT')
 
 # Application definition
 
