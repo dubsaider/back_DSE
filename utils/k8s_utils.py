@@ -20,7 +20,7 @@ def initialize_k8s_api():
     
     return client.CoreV1Api(client.ApiClient(configuration))
 
-async def get_secrets(k8s_api, secret_name, namespace='default'):
+def get_secrets(k8s_api, secret_name, namespace='default'): #TODO fix async check_cameras
     try:
         secret = k8s_api.read_namespaced_secret(name=secret_name, namespace=namespace)
         login = base64.b64decode(secret.data.get('username')).decode('utf-8')
