@@ -1,6 +1,9 @@
 # Ignore virtual environments
+.env
 env/
 .env/
+venv/
+.venv/
 
 # Ignore Python byte code cache
 *.pyc
@@ -33,3 +36,18 @@ vid/
 .vid/
 
 cameras/
+
+debug_cron.log
+
+json_files/
+.json_files/
+
+incidents/
+.incidents/
+
+**/migrations/
+
+*.crt
+*.key
+
+*.yaml

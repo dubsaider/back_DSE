@@ -1,307 +1,211 @@
-import os
-from pathlib import Path
-import ffmpeg_streaming
-from rest_framework import viewsets
+from rest_framework import viewsets, status
 from django.shortcuts import get_object_or_404
-from django.http import HttpResponse, HttpResponseNotFound
+from django.utils import timezone
 from rest_framework.response import Response
-from rest_framework import generics
-from django.views.decorators.csrf import csrf_exempt
+from rest_framework.pagination import PageNumberPagination
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from datetime import datetime, timedelta
 from .models import (
-            Camera, 
-            ClusterUnit, 
-            Processing,
-            Location,
-            DetectedObjectType,
-            ObjectsDetectionLog,
-            EventType,
-            Action,
-            Model,
-            ComputerVisionModule,
-            Event,
-            ProcessEvent,
-            Process,
-            GroupType,
-            CameraGroup,
-            CameraToGroup,
+            IncidentType,
+            Incident,
+            ZoneStat,
+            CameraStat,
+            Camera
         )
 from .serializers import (
-        CameraSerializer, 
-        ClusterUnitSerializer, 
-        ProcessingSerializer, 
-        ObjectsDetectionLogSerializer,
-        ProcessSerializer,
-        LocationSerializer,
-        EventTypeSerializer,
-        ActionSerializer,
-        ModelSerializer,
-        ComputerVisionModuleSerializer,
-        EventSerializer,
-        DetectedObjectTypeSerializer,
-        GroupTypeSerializer,
-        CameraGroupSerializer,
-        CameraToGroupSerializer,
+        IncidentSerializer,
+        ZoneStatSerializer,
+        CameraStatSerializer,
+        IncidentTypeSerializer,
     )
-import json
-from rest_framework.decorators import api_view
+from rest_framework.permissions import (
+        IsAuthenticated,
+        IsAuthenticatedOrReadOnly
+    )
 
-
-class EventTypeViewSet(viewsets.ModelViewSet):
-    queryset = EventType.objects.all()
-    serializer_class = EventTypeSerializer
-
-class ActionViewSet(viewsets.ModelViewSet):
-    queryset = Action.objects.all()
-    serializer_class = ActionSerializer
-
-class ModelsViewSet(viewsets.ModelViewSet):
-    queryset = Model.objects.all()
-    serializer_class = ModelSerializer
-
-class ComputerVisionModulesViewSet(viewsets.ModelViewSet):
-    queryset = ComputerVisionModule.objects.all()
-    serializer_class = ComputerVisionModuleSerializer
-
-class EventViewSet(viewsets.ModelViewSet):
-    queryset = Event.objects.all()
-    serializer_class = EventSerializer
-
-class DetectedObjectTypeViewSet(viewsets.ModelViewSet):
-    queryset = DetectedObjectType.objects.all()
-    serializer_class = DetectedObjectTypeSerializer
-
-class CameraViewSet(viewsets.ModelViewSet):
-    # quaryset = Camera.objects.all()
-    serializer_class = CameraSerializer
-    
-    def get_queryset(self, request):
-         
-        return Camera.objects.all()
-    
-    @swagger_auto_schema(manual_parameters=[
-        openapi.Parameter('groups', openapi.IN_QUERY, description="Insert cameras into group", type=openapi.TYPE_ARRAY, items=openapi.Items(type=openapi.TYPE_INTEGER)),
-    ])
-    def list(self, request):
-        queryset = Camera.objects.all()
-        groups = self.request.query_params.get('groups', None)
-        if groups is not None:
-            groups = groups.split(',')
-            queryset_filter = CameraToGroup.objects.filter(group_id__in=groups)
-            queryset = queryset.filter(pk__in=queryset_filter.values('camera_id'))
-        serializer = CameraSerializer(queryset, many=True)
-        return Response(serializer.data)
-    
-class ClusterUnitViewSet(viewsets.ModelViewSet):
-    queryset = ClusterUnit.objects.all()
-    serializer_class = ClusterUnitSerializer
-
-class ProcessingViewSet(viewsets.ModelViewSet):
-    queryset = Process.objects.all()
-    serializer_class = ProcessSerializer
-
-class LocationViewSet(viewsets.ModelViewSet):
-    queryset = Location.objects.all()
-    serializer_class = LocationSerializer
-
-class GroupTypeViewSet(viewsets.ModelViewSet):
-    queryset = GroupType.objects.all()
-    serializer_class = GroupTypeSerializer
-
-class CameraGroupViewSet(viewsets.ModelViewSet):
-    queryset = CameraGroup.objects.all()
-    serializer_class = CameraGroupSerializer
-
-    @swagger_auto_schema(manual_parameters=[
-        openapi.Parameter('group_name', openapi.IN_QUERY, description="Insert cameras into group", type=openapi.TYPE_STRING),
-        openapi.Parameter('group_type', openapi.IN_QUERY, description="Insert cameras into group", type=openapi.TYPE_INTEGER),
-        openapi.Parameter('cameras', openapi.IN_QUERY, description="Insert cameras into group", type=openapi.TYPE_ARRAY, items=openapi.Items(type=openapi.TYPE_INTEGER)),
-    ])
-    def create(self, request):
-        cameras = self.request.query_params.get('cameras', None)
-        group_name = self.request.query_params.get('group_name', None)
-        group_type = self.request.query_params.get('group_type', None)
-
-        if group_name is None or group_type is None:
-            return HttpResponseNotFound()
-        
-        group = CameraGroup.objects.create(
-            group_name=group_name,
-            group_type=GroupType.objects.filter(pk=group_type).first()
+def create_manual_parameters(**kwargs):
+    pagination_parameters = [
+        openapi.Parameter(
+            name='page',
+            in_=openapi.IN_QUERY,
+            description='Номер страницы',
+            type=openapi.TYPE_INTEGER,
+            required=False
+        ),
+        openapi.Parameter(
+            name='page_size',
+            in_=openapi.IN_QUERY,
+            description='Размер страницы',
+            type=openapi.TYPE_INTEGER,
+            required=False
         )
+    ]
 
-        if cameras is not None:
-            cameras = cameras.split(',')
-            for camera in cameras:
-                camera_obj = Camera.objects.filter(pk=camera).first()
-                if camera_obj is None:
-                    continue
-                CameraToGroup.objects.create(
-                    group_id=group,
-                    camera_id=camera_obj,
-                )
-        # TODO: Add normal response in "Denis`s style"
-        return Response({"status": "success"})
+    parameters = pagination_parameters + [
+        openapi.Parameter(
+            name='start_datetime',
+            in_=openapi.IN_QUERY,
+            description='Start datetime to filter by in the format YYYY-MM-DDTHH:MM:SS',
+            type=openapi.TYPE_STRING,
+            required=False
+        ),
+        openapi.Parameter(
+            name='end_datetime',
+            in_=openapi.IN_QUERY,
+            description='End datetime to filter by in the format YYYY-MM-DDTHH:MM:SS',
+            type=openapi.TYPE_STRING,
+            required=False
+        ),
+    ]
 
-class CameraToGroupViewSet(viewsets.ModelViewSet):
-    queryset = CameraToGroup.objects.all()
-    serializer_class = CameraToGroupSerializer
-
-class ObjectsDetectionLogViewSet(viewsets.ViewSet):
-    serializer_class = ObjectsDetectionLogSerializer
-
-    @swagger_auto_schema(manual_parameters=[
-        openapi.Parameter('start_datestamp', openapi.IN_QUERY, description="Start datestamp", type=openapi.TYPE_STRING),
-        openapi.Parameter('end_datestamp', openapi.IN_QUERY, description="End datestamp", type=openapi.TYPE_STRING),
-        openapi.Parameter('location', openapi.IN_QUERY, description="Location", type=openapi.TYPE_STRING),
-        openapi.Parameter('type', openapi.IN_QUERY, description="Detection type", type=openapi.TYPE_STRING),
-    ])
-    def list(self, request):
-        queryset = ObjectsDetectionLog.objects.all()
-
-        start_datestamp = self.request.query_params.get('start_datestamp', None)
-        end_datestamp = self.request.query_params.get('end_datestamp', None)
-        location = self.request.query_params.get('location', None)
-        detection_type = self.request.query_params.get('type', None)
-
-        if start_datestamp:
-            start_datestamp = datetime.strptime(start_datestamp, "%Y-%m-%dT%H:%M:%S")
-            queryset = queryset.filter(datestamp__gte=start_datestamp)
-
-        if end_datestamp:
-            end_datestamp = datetime.strptime(end_datestamp, "%Y-%m-%dT%H:%M:%S")
-            queryset = queryset.filter(datestamp__lte=end_datestamp)
-
-        if location:
-            if location.isnumeric():
-                queryset = queryset.filter(location__pk=location)
-            else:
-                queryset = queryset.filter(location__location=location)
-
-        if detection_type:
-            queryset = queryset.filter(type__type=detection_type)
-
-        serializer = ObjectsDetectionLogSerializer(queryset, many=True)
-        return Response(serializer.data)
-
-    def retrieve(self, request, pk=None):
-        queryset = ObjectsDetectionLog.objects.all()
-        object_detection_log = get_object_or_404(queryset, pk=pk)
-        serializer = ObjectsDetectionLogSerializer(object_detection_log)
-        return Response(serializer.data)
-
-class ProcessingViewSet(viewsets.ModelViewSet):
-    queryset = Process.objects.all()
-    serializer_class = ProcessSerializer
-    @swagger_auto_schema(request_body=openapi.Schema(
-        type=openapi.TYPE_OBJECT,
-        properties={
-            'msg': openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    'events': openapi.Schema(
-                        type=openapi.TYPE_ARRAY,
-                        items=openapi.Schema(
-                            type=openapi.TYPE_OBJECT,
-                            properties={
-                                'event_name': openapi.Schema(type=openapi.TYPE_STRING),
-                                'event_actions': openapi.Schema(
-                                    type=openapi.TYPE_ARRAY,
-                                    items=openapi.Schema(type=openapi.TYPE_STRING)
-                                ),
-                                'parameters': openapi.Schema(type=openapi.TYPE_OBJECT)
-                            }
-                        )
-                    ),
-                    'parameters': openapi.Schema(
-                        type=openapi.TYPE_OBJECT,
-                        properties={
-                            'cvmode': openapi.Schema(type=openapi.TYPE_STRING),
-                            'ip': openapi.Schema(type=openapi.TYPE_STRING)
-                        }
-                    )
-                }
+    for name, description in kwargs.items():
+        parameters.append(
+            openapi.Parameter(
+                name=name,
+                in_=openapi.IN_QUERY,
+                description=description,
+                type=openapi.TYPE_INTEGER,
+                required=False
             )
-        }
-    ))
-
-    def create(self, request):
-        body = request.data
-        events = body['msg']['events']
-        process_events = []
-        for event in events:
-            event_name = event['event_name']
-            event_name_id = EventType.objects.filter(
-                event_name=event_name).first() 
-            actions = []
-
-            for a in event['event_actions']:
-                actions.append(
-                    Action.objects.filter(action_name=a).first()) 
-
-            process_event = ProcessEvent.objects.create(
-                event=event_name_id,
-                parameters=event['parameters'])
-
-            process_event.actions.set(actions)
-
-            process_events.append(process_event)
-
-        process = Process.objects.create(
-            cv_module=ComputerVisionModule.objects.filter(cv_modules_name=body['msg']['parameters']['cvmode']).first(),
-            camera=Camera.objects.filter(camera_ip=body['msg']['parameters']['ip']).first(),
         )
+    return parameters
 
-        process.process_events.set(process_events)
+class CustomPageNumberPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 100
 
-        return Response({"status": "Success"})
+    def get_paginated_response(self, data):
+        return Response({
+            'links': {
+                'next': self.get_next_link(),
+                'previous': self.get_previous_link()
+            },
+            'count': self.page.paginator.count,
+            'total_pages': self.page.paginator.num_pages,
+            'results': data
+        })
 
+class IncidentTypeViewSet(viewsets.ModelViewSet):
+    queryset = IncidentType.objects.all()
+    http_method_names = ['get']
+    serializer_class = IncidentTypeSerializer
 
-def video_hls_view(request, filename):
-    video_path = '/home/ubuntuser/back_DSE/vid/L.mp4'
+class IncidentViewSet(viewsets.ModelViewSet):
+    serializer_class = IncidentSerializer
+    http_method_names = ['get']
+    pagination_class = CustomPageNumberPagination
 
-    hls_output_dir = os.path.join(os.path.dirname(video_path), 'test')
-    playlist_path = os.path.join(hls_output_dir, filename)
+    def get_queryset(self):
+        queryset = Incident.objects.all().order_by('-start_timestamp')
+        camera_id = self.request.query_params.get('camera_id', None)
+        if camera_id is not None:
+            camera = get_object_or_404(Camera, id=camera_id)
+            queryset = queryset.filter(camera=camera)
 
-    with open(playlist_path, 'rb') as playlist_file:
-        response = HttpResponse(playlist_file.read(), content_type='application/vnd.apple.mpegurl')
-        return response
+        start_datetime = self.request.query_params.get('start_datetime', None)
+        end_datetime = self.request.query_params.get('end_datetime', None)
+        if start_datetime is not None:
+            queryset = queryset.filter(datetime__gte=datetime.strptime(start_datetime, '%Y-%m-%dT%H:%M:%S'))
+        if end_datetime is not None:
+            queryset = queryset.filter(datetime__lte=datetime.strptime(end_datetime, '%Y-%m-%dT%H:%M:%S'))
 
+        incident_type = self.request.query_params.get('incident_type', None)
+        if incident_type is not None:
+            queryset = queryset.filter(incident_type=incident_type)
 
-ACTIVE_STREAMS = {}
-
-def start_stream(ip, hls_output_dir, pk):
-    stream_output_dir = os.path.join(hls_output_dir, 'stream.m3u8')
-    video = ffmpeg_streaming.input(f'rtsp://admin:bvrn2022@{ip}:554/ISAPI/Streaming/Channels/101')
-    hls_stream = video.hls(ffmpeg_streaming.Formats.h264(), hls_list_size = 10)
-    _720p = ffmpeg_streaming.Representation(ffmpeg_streaming.Size(1280, 720), ffmpeg_streaming.Bitrate(2048 * 1024, 320 * 1024))
-    hls_stream.representations(_720p)
-    hls_stream.flags('delete_segments')
-    if not os.path.isfile(stream_output_dir):
-        hls_stream.output(f'cameras/camera_{pk}/stream.m3u8')
-    return hls_stream
-
+        return queryset
     
-def get_camera_view(request, pk, filename):
+    @swagger_auto_schema(
+        manual_parameters=create_manual_parameters(
+            camera_id='ID of the camera to filter by',
+            incident_type='Type of the incident to filter by'
+        ),
+        responses={200: openapi.Response('description', IncidentSerializer(many=True))}
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+
+class ZoneStatViewSet(viewsets.ModelViewSet):
+    queryset = ZoneStat.objects.all()
+    serializer_class = ZoneStatSerializer
+    http_method_names = ['get']
+    pagination_class = CustomPageNumberPagination
+
+    @swagger_auto_schema(
+            manual_parameters=create_manual_parameters(location_id='ID of the location to filter by'),
+            responses={200: openapi.Response('description', ZoneStatSerializer(many=True))})
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        start_datetime = request.query_params.get('start_datetime', None)
+        end_datetime = request.query_params.get('end_datetime', None)
+        location_id = request.query_params.get('location_id', None)
+
+        if start_datetime is not None and end_datetime is not None:
+            try:
+                start_datetime = timezone.datetime.strptime(start_datetime, '%Y-%m-%dT%H:%M:%S')
+                end_datetime = timezone.datetime.strptime(end_datetime, '%Y-%m-%dT%H:%M:%S')
+                queryset = queryset.filter(timestamp__range=(start_datetime, end_datetime))
+            except ValueError:
+                return Response({"detail": "Invalid datetime format. Expected format is YYYY-MM-DDTHH:MM:SS."},
+                                status=status.HTTP_400_BAD_REQUEST)
+
+        if location_id is not None:
+            queryset = queryset.filter(location_id=location_id)
+
+        queryset = queryset.order_by('timestamp')
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
     
-    if not Camera.objects.filter(pk=pk).exists():
-        return HttpResponseNotFound()
-    
 
-    camera_ip = Camera.objects.filter(pk=pk).first().camera_ip
-    hls_output_dir = os.path.join(Path(__file__).resolve().parent.parent, 'cameras')
-    hls_output_dir = os.path.join(hls_output_dir, f'camera_{pk}')
+class CameraStatViewSet(viewsets.ModelViewSet):
+    queryset = CameraStat.objects.all()
+    serializer_class = CameraStatSerializer
+    http_method_names = ['get']
+    pagination_class = CustomPageNumberPagination
 
-    if f'camera_{pk}' not in ACTIVE_STREAMS.keys():
-        if not os.path.exists(hls_output_dir):
-            os.makedirs(hls_output_dir)
+    @swagger_auto_schema(
+            manual_parameters=create_manual_parameters(camera_id='ID of the camera to filter by')
+            )
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
 
-        ACTIVE_STREAMS[f'camera_{pk}'] = start_stream(camera_ip, hls_output_dir, pk)
+        camera_id = request.query_params.get('camera_id', None)
+        start_datetime = request.query_params.get('start_datetime', None)
+        end_datetime = request.query_params.get('end_datetime', None)
 
-    playlist_path = os.path.join(hls_output_dir, filename)
+        if camera_id is not None:
+            try:
+                camera = Camera.objects.get(id=camera_id)
+            except Camera.DoesNotExist:
+                return Response({"detail": "Camera with id {} does not exist.".format(camera_id)},
+                                status=status.HTTP_404_NOT_FOUND)
+            queryset = queryset.filter(camera=camera)
 
-    with open(playlist_path, 'rb') as playlist_file:
-        response = HttpResponse(playlist_file.read(), content_type='application/vnd.apple.mpegurl')
-        return response
+        if start_datetime is not None and end_datetime is not None:
+            try:
+                start_datetime = timezone.datetime.strptime(start_datetime, "%Y-%m-%dT%H:%M:%S")
+                end_datetime = timezone.datetime.strptime(end_datetime, "%Y-%m-%dT%H:%M:%S")
+                queryset = queryset.filter(timestamp__range=(start_datetime, end_datetime))
+            except ValueError:
+                return Response({"detail": "Invalid datetime format. Expected format is YYYY-MM-DDTHH:MM:SS."},
+                                status=status.HTTP_400_BAD_REQUEST)
+
+        queryset = queryset.order_by('timestamp')
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
