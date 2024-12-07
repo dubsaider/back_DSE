@@ -25,7 +25,7 @@ K8S_ADDRESS = config('K8S_ADDRESS')
 
 ALLOWED_HOSTS = ['*']
 
-PORT = 8000
+PORT = config('PORT')
 
 # Application definition
 

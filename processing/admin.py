@@ -47,8 +47,8 @@ class ProcessAdmin(admin.ModelAdmin):
               "channel": 1,
               "port": 554,
               "ip": f"{camera.camera_ip}",
-              "login": "admin",
-              "password": "bvrn2022",
+              "login": "", #TODO fix auth
+              "password": "",
               "scene_number": 1
             },
             "events": [

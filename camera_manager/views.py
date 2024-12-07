@@ -122,7 +122,7 @@ class HikvisionCameraZoomViewSet(viewsets.ViewSet):
         speed = float(speed) if speed else 0.1
         camera = Camera.objects.get(id=camera_id)
     
-        mycam = ONVIFCamera(camera.camera_ip, 80, 'admin', 'bvrn2022')
+        mycam = ONVIFCamera(camera.camera_ip, 80, '', '') #TODO fix auth
  
         moverequest = prepare_camera(mycam)
         
@@ -152,7 +152,7 @@ class HikvisionCameraPositionViewSet(viewsets.ViewSet):
         speed = float(speed) if speed else 0.005
 
         mycam = Camera.objects.get(id=camera_id)
-        mycam = ONVIFCamera(mycam.camera_ip, 80, 'admin', 'bvrn2022')
+        mycam = ONVIFCamera(mycam.camera_ip, 80, '', '')
 
         moverequest = prepare_camera(mycam)
 

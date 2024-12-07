@@ -116,8 +116,8 @@ class ProcessingViewSet(viewsets.ModelViewSet):
               "channel": 1,
               "port": 554,
               "ip": f"{camera.camera_ip}",
-              "login": "admin",
-              "password": "bvrn2022",
+              "login": "", #TODO fix auth
+              "password": "",
               "scene_number": 1
             },
             "events": get_events(events_data, process_uuid)
@@ -130,7 +130,7 @@ class ProcessingViewSet(viewsets.ModelViewSet):
         # producer.flush()
         json_data = json.dumps(kafka_msg)
         
-        response = requests.post('http://10.61.31.22:30181/create', json=json_data) #TODO clear ip
+        response = requests.post('', json=json_data) #TODO clear ip
         print(response, json_data)
         # if response.status_code == 200:
         return Response({'message': 'Process created successfully'}, status=status.HTTP_201_CREATED)
@@ -150,7 +150,7 @@ def get_events(events_data, process_uuid):
         event_name = event_type.name
         if event_name not in event_dict:
             event_dict[event_name] = {"event_actions": [], "parameters": {}}
-        event_dict['all_frames']['parameters']['host_port_rtsp_server'] = '10.61.31.18:8554' #TODO clear ip
+        event_dict['all_frames']['parameters']['host_port_rtsp_server'] = '' #TODO clear ip
         event_dict['all_frames']['parameters']['path_server_stream'] = f'{process_uuid}'
         actions_data = event_data['actions']
         for action_data in actions_data:
