@@ -3,24 +3,12 @@ from rest_framework import viewsets
 from rest_framework.response import Response
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
-from .models import (
-    Camera,
-    Stream,
-    Location,
-    CameraGroup,
-)
-from .serializers import (
-    CameraSerializer,
-    StreamSerializer,
-    LocationSerializer,
-    CameraGroupSerializer,
-)
-from rest_framework.permissions import (
-    IsAuthenticated,
-    IsAuthenticatedOrReadOnly
-)
+from .models import Camera, Stream, Location, CameraGroup
+from .serializers import CameraSerializer, StreamSerializer, LocationSerializer, CameraGroupSerializer
+from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from onvif import ONVIFCamera
 import logging
+from utils.k8s_utils import initialize_k8s_api, get_secrets
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +30,7 @@ class CameraViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(camera_groups__in=groups)
         serializer = CameraSerializer(queryset, many=True)
         return Response(serializer.data)
-    
+
 class StreamViewSet(viewsets.ModelViewSet):
     queryset = Stream.objects.all()
     serializer_class = StreamSerializer
@@ -88,26 +76,62 @@ class CameraGroupViewSet(viewsets.ModelViewSet):
 
         return Response({"status": "success"})
 
-def prepare_camera(mycam):
-    ptz = mycam.create_ptz_service()
-    media = mycam.create_media_service()
-    media_profile = media.GetProfiles()[0]
+class PTZController:
+    def __init__(self, camera):
+        self.camera = camera
+        self.k8s_api = initialize_k8s_api()
+        self.login, self.password = get_secrets(self.k8s_api, 'camera-secrets')
+        self.mycam = ONVIFCamera(camera.camera_ip, 80, self.login, self.password)
+        self.ptz = self.mycam.create_ptz_service()
+        self.media = self.mycam.create_media_service()
+        self.media_profile = self.media.GetProfiles()[0]
 
-    request = ptz.create_type('GetConfigurationOptions')
-    request.ConfigurationToken = media_profile.PTZConfiguration.token
-    ptz_configuration_options = ptz.GetConfigurationOptions(request)
+    def prepare_move_request(self):
+        request = self.ptz.create_type('GetConfigurationOptions')
+        request.ConfigurationToken = self.media_profile.PTZConfiguration.token
+        ptz_configuration_options = self.ptz.GetConfigurationOptions(request)
 
-    moverequest = ptz.create_type('RelativeMove')
-    moverequest.ProfileToken = media_profile.token
-    if moverequest.Translation is None:
-        moverequest.Translation = ptz.GetStatus(
-            {'ProfileToken': media_profile.token}).Position
-        moverequest.Translation.PanTilt.space = ptz_configuration_options.Spaces.RelativePanTiltTranslationSpace[0].URI
-        moverequest.Translation.Zoom.space = ptz_configuration_options.Spaces.RelativeZoomTranslationSpace[0].URI
-        if moverequest.Speed is None:
-            moverequest.Speed = ptz.GetStatus(
-                {'ProfileToken': media_profile.token}).Position
-    return moverequest
+        moverequest = self.ptz.create_type('RelativeMove')
+        moverequest.ProfileToken = self.media_profile.token
+        if moverequest.Translation is None:
+            moverequest.Translation = self.ptz.GetStatus(
+                {'ProfileToken': self.media_profile.token}).Position
+            moverequest.Translation.PanTilt.space = ptz_configuration_options.Spaces.RelativePanTiltTranslationSpace[0].URI
+            moverequest.Translation.Zoom.space = ptz_configuration_options.Spaces.RelativeZoomTranslationSpace[0].URI
+            if moverequest.Speed is None:
+                moverequest.Speed = self.ptz.GetStatus(
+                    {'ProfileToken': self.media_profile.token}).Position
+        return moverequest
+
+    def move_camera(self, direction, speed):
+        moverequest = self.prepare_move_request()
+        moverequest.Translation.Zoom = 0
+        moverequest.Translation.PanTilt.x = 0
+        moverequest.Translation.PanTilt.y = 0
+
+        if direction == "RIGHT":
+            moverequest.Translation.PanTilt.x = speed
+        elif direction == "LEFT":
+            moverequest.Translation.PanTilt.x = -speed
+        elif direction == "UP":
+            moverequest.Translation.PanTilt.y = speed
+        elif direction == "DOWN":
+            moverequest.Translation.PanTilt.y = -speed
+
+        self.ptz.RelativeMove(moverequest)
+
+    def zoom_camera(self, zoom_in, speed):
+        moverequest = self.prepare_move_request()
+        moverequest.Translation.PanTilt.x = 0
+        moverequest.Translation.PanTilt.y = 0
+        moverequest.Translation.Zoom = 0
+
+        if zoom_in:
+            moverequest.Translation.Zoom = speed
+        else:
+            moverequest.Translation.Zoom = -speed
+
+        self.ptz.RelativeMove(moverequest)
 
 class HikvisionCameraZoomViewSet(viewsets.ViewSet):
     @swagger_auto_schema(manual_parameters=[
@@ -121,20 +145,10 @@ class HikvisionCameraZoomViewSet(viewsets.ViewSet):
         speed = request.query_params.get('speed')
         speed = float(speed) if speed else 0.1
         camera = Camera.objects.get(id=camera_id)
-    
-        mycam = ONVIFCamera(camera.camera_ip, 80, '', '') #TODO fix auth
- 
-        moverequest = prepare_camera(mycam)
-        
-        moverequest.Translation.PanTilt.x = 0
-        moverequest.Translation.PanTilt.y = 0
-        moverequest.Translation.Zoom = 0
-        if zoom_in:
-            moverequest.Translation.Zoom = speed
-        else:
-            moverequest.Translation.Zoom = -speed
-        
-        mycam.ptz.RelativeMove(moverequest)
+
+        ptz_controller = PTZController(camera)
+        ptz_controller.zoom_camera(zoom_in, speed)
+
         return Response({'message': 'Camera zoom adjusted'})
 
 class HikvisionCameraPositionViewSet(viewsets.ViewSet):
@@ -151,23 +165,8 @@ class HikvisionCameraPositionViewSet(viewsets.ViewSet):
             return Response({'detail': 'camera_id and direction are required'}, status=400)
         speed = float(speed) if speed else 0.005
 
-        mycam = Camera.objects.get(id=camera_id)
-        mycam = ONVIFCamera(mycam.camera_ip, 80, '', '')
-
-        moverequest = prepare_camera(mycam)
-
-        moverequest.Translation.Zoom = 0
-        moverequest.Translation.PanTilt.x = 0
-        moverequest.Translation.PanTilt.y = 0
-        if direction == "RIGHT":
-            moverequest.Translation.PanTilt.x = speed
-        elif direction == "LEFT":
-            moverequest.Translation.PanTilt.x = -speed
-        elif direction == "UP":
-            moverequest.Translation.PanTilt.y = speed
-        elif direction == "DOWN":
-            moverequest.Translation.PanTilt.y = -speed
-        
-        mycam.ptz.RelativeMove(moverequest)
+        camera = Camera.objects.get(id=camera_id)
+        ptz_controller = PTZController(camera)
+        ptz_controller.move_camera(direction, speed)
 
         return Response({'message': 'Camera moved'})
