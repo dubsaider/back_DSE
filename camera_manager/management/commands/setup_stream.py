@@ -3,7 +3,6 @@ from camera_manager.models import Camera, Stream
 from utils.k8s_utils import initialize_k8s_api
 import logging
 import subprocess
-import os
 import yaml
 
 logger = logging.getLogger(__name__)
@@ -13,9 +12,16 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument('camera_id', type=int, help='ID of the camera to setup')
+        parser.add_argument(
+            '--container-image', 
+            type=str, 
+            default='alexxit/go2rtc', 
+            help='Container image to use (default: alexxit/go2rtc)'
+        )
 
     def handle(self, *args, **kwargs):
         camera_id = kwargs['camera_id']
+        container_image = kwargs['container_image']
         camera = Camera.objects.get(id=camera_id)
         k8s_api = initialize_k8s_api()
 
@@ -23,7 +29,7 @@ class Command(BaseCommand):
 
         self.generate_config(camera, k8s_api)
 
-        self.create_k8s_resources(camera)
+        self.create_k8s_resources(camera, container_image)
 
         self.send_config_to_pod(camera)
 
@@ -35,23 +41,28 @@ class Command(BaseCommand):
     def generate_config(self, camera, k8s_api):
         subprocess.run(['python', 'manage.py', 'generate_go2rtc_config', str(camera.id)], check=True)
 
-    def create_k8s_resources(self, camera):
-        deployment_manifest = self.get_deployment_manifest(camera)
+    def create_k8s_resources(self, camera, container_image):
+        pod_manifest = self.get_pod_manifest(camera, container_image)
+        # deployment_manifest = self.get_deployment_manifest(camera, container_image)
         service_manifest = self.get_service_manifest(camera)
 
-        with open('deployment_manifest.yaml', 'w') as file:
-            yaml.dump(deployment_manifest, file, default_flow_style=False)
+        with open('pod_manifest.yaml', 'w') as file:
+            yaml.dump(pod_manifest, file, default_flow_style=False)
+
+        # with open('deployment_manifest.yaml', 'w') as file:
+        #     yaml.dump(deployment_manifest, file, default_flow_style=False)
 
         with open('service_manifest.yaml', 'w') as file:
             yaml.dump(service_manifest, file, default_flow_style=False)
 
-        subprocess.run(['python', 'manage.py', 'create_k8s_resources', 'deployment_manifest.yaml'], check=True)
+        subprocess.run(['python', 'manage.py', 'create_k8s_resources', 'pod_manifest.yaml'], check=True)
+        # subprocess.run(['python', 'manage.py', 'create_k8s_resources', 'deployment_manifest.yaml'], check=True)
         subprocess.run(['python', 'manage.py', 'create_k8s_resources', 'service_manifest.yaml'], check=True)
 
         pod_name = f"go2rtc-pod-{camera.id}"
         subprocess.run(['python', 'manage.py', 'wait_for_pod_ready', pod_name], check=True)
 
-    def get_deployment_manifest(self, camera):
+    def get_pod_manifest(self, camera, container_image):
         return {
             'apiVersion': 'v1',
             'kind': 'Pod',
@@ -65,11 +76,50 @@ class Command(BaseCommand):
             'spec': {
                 'containers': [{
                     'name': 'go2rtc',
-                    'image': 'vilams/go2rtc:1.0',
+                    'image': container_image,
                     'ports': [
                         {'containerPort': 1984}
                     ]
                 }]
+            }
+        }
+
+    def get_deployment_manifest(self, camera, container_image): # TODO проверить работоспособность
+        return {
+            'apiVersion': 'apps/v1',
+            'kind': 'Deployment',
+            'metadata': {
+                'name': f"go2rtc-deployment-{camera.id}",
+                'labels': {
+                    'app': 'go2rtc',
+                    'camera_id': str(camera.id)
+                }
+            },
+            'spec': {
+                'replicas': 1,
+                'selector': {
+                    'matchLabels': {
+                        'app': 'go2rtc',
+                        'camera_id': str(camera.id)
+                    }
+                },
+                'template': {
+                    'metadata': {
+                        'labels': {
+                            'app': 'go2rtc',
+                            'camera_id': str(camera.id)
+                        }
+                    },
+                    'spec': {
+                        'containers': [{
+                            'name': 'go2rtc',
+                            'image': container_image,
+                            'ports': [
+                                {'containerPort': 1984}
+                            ]
+                        }]
+                    }
+                }
             }
         }
 
