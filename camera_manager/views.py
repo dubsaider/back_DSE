@@ -50,7 +50,20 @@ class CameraGroupViewSet(viewsets.ModelViewSet):
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
         serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+
+        ungrouped_cameras = Camera.objects.filter(camera_groups__isnull=True)
+        ungrouped_cameras_serializer = CameraSerializer(ungrouped_cameras, many=True)
+
+        ungrouped_group = {
+            "id": -1,
+            "group_name": "Без группы",
+            "cameras": ungrouped_cameras_serializer.data
+        }
+
+        response_data = serializer.data
+        response_data.append(ungrouped_group)
+
+        return Response(response_data)
 
     @swagger_auto_schema(manual_parameters=[
         openapi.Parameter('group_name', openapi.IN_QUERY, description="Name of the group", type=openapi.TYPE_STRING),
