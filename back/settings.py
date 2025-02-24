@@ -20,7 +20,6 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 
 KAFKA = config('KAFKA').split(',')
 RTSP_SERVER = config('RTSP_SERVER')
-BACKEND = config('BACKEND')
 K8S_ADDRESS = config('K8S_ADDRESS')
 
 ALLOWED_HOSTS = ['*']
