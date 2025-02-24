@@ -257,6 +257,10 @@ class Command(BaseCommand):
         core_v1_api, _, _ = get_k8s_apis()
         service = core_v1_api.read_namespaced_service(name=service_name, namespace='default')
         cluster_ip = service.spec.cluster_ip
+        
+        if Stream.objects.filter(camera=camera).exists():
+            logger.info(f"Stream record for camera {camera.id} already exists. Skipping creation.")
+            return
 
         Stream.objects.create(
             camera=camera,
