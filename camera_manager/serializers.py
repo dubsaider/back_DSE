@@ -6,14 +6,14 @@ from .models import (
     CameraGroup
 )
 from processing.serializers import ProcessSerializer
-from back.settings import K8S_ADDRESS
+from back.settings import DOMAIN_NAME
 
 class BaseSerializer(serializers.ModelSerializer):
     def get_hls_url(self, obj):
         try:
             stream = Stream.objects.get(camera_id=obj.id)
             if stream.k8s_pod_name and stream.k8s_pod_port:
-                return f"http://{K8S_ADDRESS}:31045/cameras/go2rtc-{stream.camera_id}/api/ws?src=camera-{stream.camera_id}"
+                return f"http://{DOMAIN_NAME}:31045/cameras/go2rtc-{stream.camera_id}/api/ws?src=camera-{stream.camera_id}"
         except Stream.DoesNotExist:
             pass
         return None

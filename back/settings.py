@@ -21,6 +21,7 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 KAFKA = config('KAFKA').split(',')
 RTSP_SERVER = config('RTSP_SERVER')
 K8S_ADDRESS = config('K8S_ADDRESS')
+DOMAIN_NAME = config('DOMAIN_NAME')
 
 ALLOWED_HOSTS = ['*']
 
