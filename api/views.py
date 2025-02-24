@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
-from datetime import datetime, timedelta
+from datetime import datetime
 from .models import (
             IncidentType,
             Incident,
@@ -20,8 +20,7 @@ from .serializers import (
         IncidentTypeSerializer,
     )
 from rest_framework.permissions import (
-        IsAuthenticated,
-        IsAuthenticatedOrReadOnly
+        IsAuthenticated
     )
 
 def create_manual_parameters(**kwargs):
@@ -91,11 +90,13 @@ class IncidentTypeViewSet(viewsets.ModelViewSet):
     queryset = IncidentType.objects.all()
     http_method_names = ['get']
     serializer_class = IncidentTypeSerializer
+    permission_classes = [IsAuthenticated]
 
 class IncidentViewSet(viewsets.ModelViewSet):
     serializer_class = IncidentSerializer
     http_method_names = ['get']
     pagination_class = CustomPageNumberPagination
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         queryset = Incident.objects.all().order_by('-start_timestamp')
@@ -133,6 +134,7 @@ class ZoneStatViewSet(viewsets.ModelViewSet):
     serializer_class = ZoneStatSerializer
     http_method_names = ['get']
     pagination_class = CustomPageNumberPagination
+    permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
             manual_parameters=create_manual_parameters(location_id='ID of the location to filter by'),
@@ -172,6 +174,7 @@ class CameraStatViewSet(viewsets.ModelViewSet):
     serializer_class = CameraStatSerializer
     http_method_names = ['get']
     pagination_class = CustomPageNumberPagination
+    permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
             manual_parameters=create_manual_parameters(camera_id='ID of the camera to filter by')

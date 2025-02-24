@@ -8,7 +8,7 @@ from django.contrib.auth.models import User
 
 class IncidentType(models.Model):
     name = models.CharField(max_length=255)
-    description = models.CharField(max_length=255, null=True, default=None)
+    description = models.CharField(max_length=255, null=True, blank=True)
 
 class Incident(models.Model):
     STATUS_CHOICES = [
@@ -18,12 +18,12 @@ class Incident(models.Model):
     ]
    
     start_timestamp = models.DateTimeField(auto_now_add=True)
-    end_timestamp = models.DateTimeField(default=None, null=True, blank=True)
+    end_timestamp = models.DateTimeField(null=True, blank=True)
     camera = models.ForeignKey(Camera, on_delete=models.CASCADE)
     incident_type = models.ForeignKey(IncidentType, on_delete=models.CASCADE)
-    link = models.URLField(blank=True, default=None)
+    link = models.URLField(blank=True, null=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='new')
-    operator = models.ForeignKey(User, on_delete=models.CASCADE, related_name='incidents', default=1)
+    operator = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='incidents', null=True, blank=True)
     is_system = models.BooleanField(default=True)
 
 class ZoneStat(models.Model):
