@@ -5,8 +5,7 @@ import aiohttp
 import asyncio
 import logging
 from asgiref.sync import sync_to_async
-from utils.k8s_utils import initialize_k8s_api, get_secrets
-
+from utils.k8s_utils import get_k8s_apis, get_secrets
 logger = logging.getLogger(__name__)
 
 class Command(BaseCommand):
@@ -19,7 +18,6 @@ class Command(BaseCommand):
         ip = obj.camera_ip
         status = obj.is_active
         new_status = False
-
         if ip == '0.0.0.0':
             new_status = False
             logger.warning(f'[WARNING] Camera {ip} has invalid IP address. Marking as inactive.')
@@ -55,7 +53,6 @@ class Command(BaseCommand):
             )
             await sync_to_async(new_incident.save)()
             logger.info(f'[INFO] Camera {ip} status changed to {"Active" if new_status else "Inactive"}. Incident created.')
-
             await sync_to_async(Camera.objects.filter(pk=camera.pk).update)(is_active=new_status)
             logger.info(f'[INFO] Camera {ip} status updated in the database.')
         else:
@@ -63,7 +60,6 @@ class Command(BaseCommand):
 
     async def run_checks(self):
         logger.info('[INFO] Starting camera status check...')
-
         try:
             self.incident_type_active = await sync_to_async(self.get_incident_type)(True)
             self.incident_type_inactive = await sync_to_async(self.get_incident_type)(False)
@@ -71,15 +67,15 @@ class Command(BaseCommand):
             logger.error(f'[ERROR] IncidentType does not exist: {e}')
             return
 
-        k8s_api = initialize_k8s_api()
-
+        core_v1_api, _, _ = get_k8s_apis()
         cameras = await sync_to_async(list)(Camera.objects.all())
+
         async with aiohttp.ClientSession() as session:
             tasks = []
             for camera in cameras:
                 secret_name = f"camera-secret-{camera.id}"
                 namespace = 'default'
-                login, password = await get_secrets(k8s_api, secret_name, namespace)
+                login, password = get_secrets(core_v1_api, secret_name, namespace)
                 if not login or not password:
                     logger.error(f'[ERROR] Failed to retrieve secrets for camera {camera.id}. Skipping...')
                     continue
