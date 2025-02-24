@@ -163,7 +163,7 @@ class Command(BaseCommand):
 
     def send_config_to_pod(self, camera, config):
         """Отправляет конфигурацию в Pod через Ingress в формате YAML после его запуска."""
-        ingress_host = f"http://{K8S_ADDRESS}:6443/cameras/go2rtc-{camera.id}"
+        ingress_host = f"http://{K8S_ADDRESS}:31045/cameras/go2rtc-{camera.id}"
         core_v1_api, _, _ = get_k8s_apis()
 
         try:
