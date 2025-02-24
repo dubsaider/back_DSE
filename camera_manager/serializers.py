@@ -13,16 +13,7 @@ class BaseSerializer(serializers.ModelSerializer):
         try:
             stream = Stream.objects.get(camera_id=obj.id)
             if stream.k8s_pod_name and stream.k8s_pod_port:
-                # return f'http://{K8S_ADDRESS}:{stream.k8s_pod_port}/stream.html?src=stream{stream.camera.id}'
-
-                # return f'ws://{K8S_ADDRESS}:{stream.k8s_pod_port}/stream.html?src=stream{stream.camera.id}&mode=webrtc'
-                # return f'http://{K8S_ADDRESS}:{stream.k8s_pod_port}/stream.html?src=stream{stream.camera.id}&mode=mse'
-                # return f"http://10.61.17.60:8000/camera_manager/mse/{stream.camera.id}/"
-                # return f"http://10.61.17.60:8000/camera_manager/webrtc/{stream.camera.id}/"
-                # return f'http://{K8S_ADDRESS}:{stream.k8s_pod_port}/api/stream.mp4?src=stream118&mp4=all'
-                # return f"http://10.61.17.60:8000/camera_manager/hls/{stream.camera.id}/"
-                # return f"http://{K8S_ADDRESS}:{stream.k8s_pod_port}/api/stream.m3u8?src=stream{stream.camera_id}"
-                return f"http://{K8S_ADDRESS}:{stream.k8s_pod_port}/api/stream.m3u8?src=stream{stream.camera_id}&mp4=flac"
+                return f"http://{K8S_ADDRESS}:31163/cameras/go2rtc-{stream.camera_id}/api/ws?src=camera-{stream.camera_id}"
         except Stream.DoesNotExist:
             pass
         return None

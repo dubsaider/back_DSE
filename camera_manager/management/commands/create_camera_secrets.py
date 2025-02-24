@@ -1,15 +1,15 @@
 from django.core.management.base import BaseCommand
 from camera_manager.models import Camera
 from kubernetes import client
-from back.settings import K8S_ADDRESS
+from back.settings import K8S_ADDRESS, USER_CERT_FILE, USER_KEY_FILE, CA_CERT_FILE
 
 class Command(BaseCommand):
     help = 'Create Kubernetes Secrets for all cameras in the database'
 
     def handle(self, *args, **kwargs):
-        user_cert_file = 'user.crt' 
-        user_key_file = 'user.key' 
-        ca_cert_file = 'ca.crt' 
+        user_cert_file = USER_CERT_FILE
+        user_key_file = USER_KEY_FILE
+        ca_cert_file = CA_CERT_FILE
         api_server_url = f'https://{K8S_ADDRESS}:6443' # change url
 
         configuration = client.Configuration()

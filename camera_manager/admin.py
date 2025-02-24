@@ -5,7 +5,6 @@ from .models import (
     Location,
     CameraGroup,
 )
-from back.settings import K8S_ADDRESS
 
 
 @admin.register(Camera)
@@ -18,14 +17,7 @@ class LocationsAdmin(admin.ModelAdmin):
 
 @admin.register(Stream)
 class StreamAdmin(admin.ModelAdmin):
-    list_display = ('id', 'k8s_pod_name', 'k8s_pod_port', 'status', 'created_at', 'camera', 'stream_url')
-
-    def stream_url(self, obj):
-        if obj.k8s_pod_name and obj.k8s_pod_port:
-            return f"http://{K8S_ADDRESS}:{obj.k8s_pod_port}/convert_to_hls/streams/{obj.camera.id}/stream.m3u8"
-        return None
-
-    stream_url.short_description = 'Stream URL'
+    list_display = ('id', 'k8s_pod_name', 'k8s_pod_port', 'status', 'created_at', 'camera')
 
 admin.site.unregister(Camera)
 admin.site.register(Camera, CameraAdmin)
