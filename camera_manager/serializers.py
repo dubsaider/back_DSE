@@ -26,13 +26,17 @@ class LocationSerializer(serializers.ModelSerializer):
 class CameraSerializer(BaseSerializer):
     processing_options = ProcessSerializer(many=True, read_only=True)
     stream_url = serializers.SerializerMethodField()
+    groups = serializers.SerializerMethodField()
 
     class Meta:
         model = Camera
-        fields = ('id', 'camera_name', 'camera_ip', 'camera_description', 'camera_lat', 'camera_lon', 'is_active', 'processing_options', 'stream_url')
+        fields = ('id', 'camera_name', 'camera_ip', 'camera_description', 'camera_lat', 'camera_lon', 'is_active', 'processing_options', 'stream_url', 'groups')
     
     def get_stream_url(self, obj):
         return self.get_hls_url(obj)
+    
+    def get_groups(self, obj):
+        return [(group.id, group.group_name) for group in obj.camera_groups.all()]
 
 class CameraGroupSerializer(serializers.ModelSerializer):
     cameras = CameraSerializer(many=True, read_only=True)
